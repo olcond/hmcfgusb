@@ -35,12 +35,22 @@ hmcfgusb/
 │   ├── util.c / .h            # ASCII/nibble helpers
 │   └── hexdump.h              # Hex/ASCII dump utility (debug)
 ├── Build / packaging
-│   ├── Makefile               # Standard build + OpenWRT dual-mode
+│   ├── Makefile               # Standard build + OpenWRT dual-mode (103 lines)
 │   ├── Dockerfile             # Alpine-based Docker image
-│   ├── debian/                # Debian package metadata
+│   ├── debian/                # Debian package metadata (see Debian Packaging section)
+│   │   ├── control            # Package metadata and dependencies
+│   │   ├── changelog          # Release history (latest: 0.103-1)
+│   │   ├── rules              # debhelper build rules
+│   │   ├── install            # File installation list → /opt/hm/hmcfgusb/
+│   │   ├── hmcfgusb.links     # Symlinks from /opt/hm/hmcfgusb/ to /usr/{s,}bin/
+│   │   ├── hmland.init        # SysV init script for hmland daemon
+│   │   ├── hmland.default     # /etc/default/hmland config (port, logging)
+│   │   ├── hmland.logrotate   # Log rotation configuration
+│   │   └── ...                # Example/template files (manpage, cron, etc.)
 │   └── version.h              # Version string ("0.103-git")
 ├── Configuration
-│   └── hmcfgusb.rules         # udev rules for USB device access
+│   ├── hmcfgusb.rules         # udev rules for USB device access
+│   └── .gitignore             # Ignores *.o, *.d, binaries, *.enc, *.eq3
 ├── Scripts
 │   ├── enable-hmmodiprf.sh    # Load cp210x driver for HM-MOD-UART
 │   ├── reset-hmmoduart.sh     # GPIO reset for HM-MOD-UART on Raspberry Pi
@@ -77,6 +87,8 @@ make clean
 **Libraries:** `libusb-1.0`, `librt`
 **Extra paths:** `-I/opt/local/include`, `-L/opt/local/lib`
 
+**Note:** The architecture-specific flags (`-march=x86-64-v3 -mtune=cannonlake`) are currently hardcoded — the `ifeq ($(UNAME_P),x86_64)` conditional in the Makefile is commented out. Building on non-x86_64 platforms (e.g. ARM/Raspberry Pi) requires manually adjusting `CFLAGS` in the Makefile or passing them via the command line (`CFLAGS="-MMD -O2 -Wall -Wextra -g" make`).
+
 ### Build Targets and Their Object Dependencies
 
 | Binary | Object Files |
@@ -102,6 +114,34 @@ docker run -p 1234:1234 hmcfgusb   # runs hmland -v -p 1234 -I
 ```
 
 The Dockerfile uses **Alpine Linux 3.23** with `clang`, `cmake`, `ccache`, and `libusb-dev`.
+
+- **Build ARG:** `HMCFGUSB_VER=0.104` (declared but currently unused in the build)
+- **Build deps:** `build-base`, `clang`, `cmake`, `ccache`, `libusb-dev` (removed after build)
+- **Runtime deps:** `libusb`, `ca-certificates`
+- **Exposed port:** 1234
+- **CMD:** `/app/hmcfgusb/hmland -v -p 1234 -I`
+- **Cleanup:** Removes `*.h`, `*.o`, `*.c`, `*.d` files after compilation
+
+**Known issue:** The Dockerfile CMD uses `"-p 1234"` as a single JSON array element instead of separate `"-p", "1234"` arguments. This may cause argument parsing issues depending on how hmland handles it.
+
+### Debian Packaging
+
+The `debian/` directory provides packaging for Debian-based systems.
+
+- **Maintainer:** JSurf <jsurf@gmx.de>
+- **Build-Depends:** `debhelper (>= 8.0.0)`, `libusb-1.0-0-dev`
+- **Install path:** Binaries are installed to `/opt/hm/hmcfgusb/` with symlinks:
+  - `hmland` → `/usr/sbin/hmland`
+  - `hmsniff`, `flash-hmcfgusb`, `flash-hmmoduart`, `flash-ota` → `/usr/bin/`
+- **Service management:** SysV init script (`hmland.init`) with defaults in `/etc/default/hmland`
+- **Default config** (`hmland.default`): port 1000, logging disabled, `HMLAND_ENABLED="1"`
+- **Log rotation:** Configured via `hmland.logrotate`
+- **Latest changelog entry:** version 0.103-1 (2016-01-23)
+
+To build a `.deb` package:
+```bash
+dpkg-buildpackage -us -uc
+```
 
 ---
 
@@ -229,15 +269,31 @@ feat: add support for HM-LGW-O-TW-W-EU network gateway
 - Push to any branch or tag
 - Monthly scheduled build (14th of month, 00:00 UTC)
 
+**Permissions:** `contents: read`, `packages: write`, `id-token: write` (for OIDC-based Cosign signing)
+
 **Steps:**
-1. Build Docker image (Linux amd64)
-2. Sign image with Cosign using GitHub OIDC tokens
-3. Push to container registry (ghcr.io) and optionally Docker Hub
+1. Login to ghcr.io and Docker Hub
+2. Checkout repository
+3. Install Cosign for image signing
+4. Setup QEMU and Docker Buildx
+5. Generate image metadata and tags
+6. Build and push Docker image (Linux amd64 only — ARM platforms are commented out)
+7. Sign published images with Cosign using GitHub OIDC tokens
+
+**Action versions (pinned by SHA, managed by Renovate):**
+- `actions/checkout` v6.0.1
+- `docker/login-action` v3.6.0
+- `docker/metadata-action` v5.10.0
+- `docker/setup-qemu-action` v3.7.0
+- `docker/setup-buildx-action` v3.12.0
+- `docker/build-push-action` v6.18.0
+- `sigstore/cosign-installer` v4.0.0
 
 **Image tags generated:**
 - `edge` — latest dev build
-- Branch name, PR number, commit SHA
-- Semantic version tags on releases
+- Branch name, PR number, commit SHA (long format)
+- Semantic version tags on releases (major.minor)
+- Date-based tags on scheduled builds (`YYYY-MM-DD`)
 
 ### Renovate (`.github/renovate.json5`)
 
@@ -378,3 +434,15 @@ attr hmusb hmId <hmId>
 7. **Protocol correctness is critical** — incorrect packet construction or AES signing changes can silently break device communication or security guarantees.
 8. **Maintain `-Wall -Wextra` cleanliness** — the build flags treat warnings seriously; introduce no new warnings.
 9. **No test suite exists** — validate changes manually with actual hardware or by code review.
+10. **`debian/` packaging** — the install paths and symlinks in `debian/install` and `debian/hmcfgusb.links` must be updated if new binaries are added.
+11. **`.gitignore`** — already covers `*.o`, `*.d`, compiled binaries, and firmware files (`*.enc`, `*.eq3`). Add new build artifacts here when introducing new targets.
+
+---
+
+## Known Discrepancies and Notes
+
+1. **Version mismatch:** `version.h` defines `VERSION "0.103-git"` while the Dockerfile declares `ARG HMCFGUSB_VER=0.104`. The ARG is currently unused in the build.
+2. **Hardcoded x86-64 flags:** The Makefile `CFLAGS` include `-march=x86-64-v3 -mtune=cannonlake` unconditionally (the architecture detection `ifeq` is commented out). This will cause build failures on non-x86_64 targets like Raspberry Pi.
+3. **Dockerfile CMD format:** The CMD array uses `"-p 1234"` as a single element instead of `"-p", "1234"` as separate elements, which may cause argument parsing issues.
+4. **Docker platform support:** The CI workflow only builds for `linux/amd64`. ARM platforms (`linux/arm/v7`, `linux/arm64`) are commented out in the workflow file.
+5. **Debian packaging age:** The `debian/changelog` was last updated 2016-01-23 (version 0.103-1). The packaging still uses `Standards-Version: 3.9.3` and `debhelper (>= 8.0.0)`, which are significantly outdated.
