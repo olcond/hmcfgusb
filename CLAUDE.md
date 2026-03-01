@@ -128,14 +128,15 @@ The Dockerfile uses a **multi-stage build** on **Alpine Linux 3.23**.
 The `debian/` directory provides packaging for Debian-based systems.
 
 - **Maintainer:** JSurf <jsurf@gmx.de>
-- **Build-Depends:** `debhelper (>= 8.0.0)`, `libusb-1.0-0-dev`
+- **Standards-Version:** 4.7.0; **debhelper-compat:** 13
+- **Build-Depends:** `debhelper-compat (= 13)`, `libusb-1.0-0-dev`
 - **Install path:** Binaries are installed to `/opt/hm/hmcfgusb/` with symlinks:
   - `hmland` → `/usr/sbin/hmland`
   - `hmsniff`, `flash-hmcfgusb`, `flash-hmmoduart`, `flash-ota` → `/usr/bin/`
 - **Service management:** SysV init script (`hmland.init`) with defaults in `/etc/default/hmland`
 - **Default config** (`hmland.default`): port 1000, logging disabled, `HMLAND_ENABLED="1"`
 - **Log rotation:** Configured via `hmland.logrotate`
-- **Latest changelog entry:** version 0.103-1 (2016-01-23)
+- **Latest changelog entry:** version 0.103-2 (modernised packaging)
 
 To build a `.deb` package:
 ```bash
@@ -190,40 +191,46 @@ Firmware updater supporting multiple transport types.
   - `-D <hmid>` — HMID of target device
   - `-K <idx:key>` — AES key for signed devices
 
-### `hmuartlgw.c / .h` — UART Driver (598 lines)
+### `hmuartlgw.c / .h` — UART Driver
 
 Driver for HM-MOD-UART and HM-LGW-O-TW-W-EU serial devices.
 
 - Frame escaping/unescaping for UART protocol
 - Dual-mode: OS (bootloader) and App (normal operation)
 - Commands: `UPDATE_FIRMWARE`, `CHANGE_APP`, `SEND`, `ADD_PEER`, `SET_HMID`, AES key management
+- `struct hmuartlgw_dev` holds `struct termios oldtio`; `hmuartlgw_close()` restores terminal settings and frees the device struct
+- `hmuartlgw_poll()` guards against receive buffer overflow on oversized frames
 
-### `culfw.c / .h` — culfw Driver (208 lines)
+### `culfw.c / .h` — culfw Driver
 
 Serial protocol driver for CUL-based devices. Supports baud rates: 9600, 19200, 38400, 57600, 115200 (default: 38400).
 
-### `hm.c / .h` — HomeMatic Protocol (114 lines)
+- `struct culfw_dev` holds `struct termios oldtio`; `culfw_close()` restores terminal settings and frees the device struct
+
+### `hm.c / .h` — HomeMatic Protocol
 
 Packet format macros and AES signing.
 
 - **Packet macros:** `HM_LEN()`, `HM_MSGID()`, `HM_CTL()`, `HM_TYPE()`, `HM_PAYLOAD()`, `HM_SRC()`, `HM_DST()`
 - **Device type enum:** `HMCFGUSB`, `CULFW`, `HMUARTLGW`
-- **Function:** `hm_sign()` — generates AES challenge-response signatures
+- **Functions:** `hm_sign()` — AES challenge-response; `hm_set_debug()` — enable debug hexdumps
 
 ### `aes.c / .h` — AES Cryptography (1096 lines)
 
 Brad Conte's public domain AES implementation (AES-128, AES-192, AES-256, ECB/CBC modes). Used for device authentication.
 
-### `firmware.c / .h` — Firmware Parser (388 lines)
+### `firmware.c / .h` — Firmware Parser
 
-Intel HEX file reader and CRC16 validator.
+Intel HEX and eq3 firmware file reader with CRC16 validation.
 
 - Supported MCUs: ATmega328P (image size `0x7000`), ATmega644P (image size `0xF000`)
+- Intel HEX: per-record checksum verified; `addr + len` bounds checked against image array
+- File descriptor closed on all exit paths
 
-### `util.c / .h` — Utilities (57 lines)
+### `util.c / .h` — Utilities
 
-- `ascii_to_nibble()` / `nibble_to_ascii()` conversions
-- Nibble validation helpers
+- `ascii_to_nibble()` / `nibble_to_ascii()` conversions (`nibble_to_ascii` masks input with `& 0xf`)
+- `validate_nibble()` — returns 1 if byte is a valid hex ASCII character
 
 ---
 
@@ -439,4 +446,7 @@ attr hmusb hmId <hmId>
 
 ## Known Discrepancies and Notes
 
-1. **Debian packaging age:** The `debian/changelog` was last updated 2016-01-23 (version 0.103-1). The packaging still uses `Standards-Version: 3.9.3` and `debhelper (>= 8.0.0)`, which are significantly outdated.
+No outstanding discrepancies. All previously noted issues have been resolved:
+- Dockerfile multi-stage build (PR #55), ARM platform support (PR #56/#57)
+- Makefile arch flag conditional restored (PR #56)
+- Debian packaging modernised to Standards-Version 4.7.0 / debhelper-compat 13 (PR #60)
