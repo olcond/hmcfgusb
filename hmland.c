@@ -1,6 +1,6 @@
 /* HM-CFG-LAN emulation for HM-CFG-USB
  *
- * Copyright (c) 2013-16 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2013-20 Michael Gernoth <michael@gernoth.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -357,6 +357,8 @@ static int hmlan_format_out(uint8_t *buf, int buf_len, void *data)
 		(*rxp)->rx = malloc((*rxp)->len);
 		if (!(*rxp)->rx) {
 			perror("malloc");
+			free(*rxp);
+			*rxp = NULL;
 			return 0;
 		}
 		memset((*rxp)->rx, 0, (*rxp)->len);
@@ -479,7 +481,7 @@ static int hmlan_parse_in(int fd, void *data)
 					found = 1;
 					break;
 				}
-				if (i > LAN_MAX_LINE_LENGTH) {
+				if (i >= LAN_MAX_LINE_LENGTH) {
 					if (verbose)
 						printf("Client sent more than %d bytes without newline, closing connection!\n", LAN_MAX_LINE_LENGTH);
 					return -1;
@@ -487,12 +489,17 @@ static int hmlan_parse_in(int fd, void *data)
 			}
 			if (!found)
 				break;
-			newbuf = realloc(lan_read_buf, lan_read_buflen);
-			if (lan_read_buflen && !newbuf) {
-				perror("realloc");
-				return 0;
+			if (lan_read_buflen == 0) {
+				free(lan_read_buf);
+				lan_read_buf = NULL;
+			} else {
+				newbuf = realloc(lan_read_buf, lan_read_buflen);
+				if (!newbuf) {
+					perror("realloc");
+					return 0;
+				}
+				lan_read_buf = newbuf;
 			}
-			lan_read_buf = newbuf;
 		}
 	} else if (r < 0) {
 		if (errno != ECONNRESET)
@@ -613,8 +620,8 @@ static int comm(int fd_in, int fd_out, int master_socket, int flags)
 
 		if (reboot_seconds && ((dev->opened_at + reboot_seconds) <= time(NULL))) {
 			if (verbose) {
-				printf("HM-CFG-USB running since %lld seconds, rebooting now...\n",
-					time(NULL) - dev->opened_at);
+				printf("HM-CFG-USB running since %ld seconds, rebooting now...\n",
+					(long)(time(NULL) - dev->opened_at));
 			}
 			hmcfgusb_enter_bootloader(dev);
 		}
@@ -897,7 +904,7 @@ int main(int argc, char **argv)
 				break;
 			case 'V':
 				printf("hmland " VERSION "\n");
-				printf("Copyright (c) 2013-16 Michael Gernoth\n\n");
+				printf("Copyright (c) 2013-20 Michael Gernoth\n\n");
 				exit(EXIT_SUCCESS);
 			case 'h':
 			case ':':
