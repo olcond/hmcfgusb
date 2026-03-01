@@ -1,6 +1,6 @@
 /* culfw driver
  *
- * Copyright (c) 2014-16 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2014-20 Michael Gernoth <michael@gernoth.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -39,7 +39,7 @@
 struct culfw_dev *culfw_init(char *device, uint32_t speed, culfw_cb_fn cb, void *data)
 {
 	struct culfw_dev *dev = NULL;
-	struct termios oldtio, tio;
+	struct termios tio;
 	uint32_t brate;
 
 	switch(speed) {
@@ -78,7 +78,7 @@ struct culfw_dev *culfw_init(char *device, uint32_t speed, culfw_cb_fn cb, void 
 		goto out;
 	}
 
-	if (tcgetattr(dev->fd, &oldtio) == -1) {
+	if (tcgetattr(dev->fd, &dev->oldtio) == -1) {
 		perror("tcgetattr");
 		goto out2;
 	}
@@ -173,7 +173,9 @@ int culfw_poll(struct culfw_dev *dev, int timeout)
 
 void culfw_close(struct culfw_dev *dev)
 {
+	tcsetattr(dev->fd, TCSANOW, &dev->oldtio);
 	close(dev->fd);
+	free(dev);
 }
 
 void culfw_flush(struct culfw_dev *dev)
