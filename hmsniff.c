@@ -127,6 +127,11 @@ static void dissect_hm(uint8_t *buf, int len)
 	static int count = 0;
 	int i;
 
+	if (len < 10) {
+		fprintf(stderr, "short packet (%d bytes), skipping\n", len);
+		return;
+	}
+
 	gettimeofday(&tv, NULL);
 	tmp = localtime(&tv.tv_sec);
 	memset(ts, 0, sizeof(ts));
@@ -155,7 +160,7 @@ static void dissect_hm(uint8_t *buf, int len)
 		if (buf[2] & (1 << 6)) printf("RPTED ");
 		if (buf[2] & (1 << 7)) printf("RPTEN ");
 		printf("\n");
-		printf("\tMessage type: %s (0x%02x 0x%02x)\n", hm_message_types(buf[3], buf[10]), buf[3], buf[10]);
+		printf("\tMessage type: %s (0x%02x 0x%02x)\n", hm_message_types(buf[3], (len > 10) ? buf[10] : 0), buf[3], (len > 10) ? buf[10] : 0);
 		printf("\tMessage: ");
 		for (i = 10; i < len; i++) {
 			printf("%02X", buf[i]);
@@ -176,7 +181,7 @@ static void dissect_hm(uint8_t *buf, int len)
 		for (i = 10; i < len; i++) {
 			printf("%02X", buf[i]);
 		}
-		printf("%s(%s)\n", (i>10)?" ":"", hm_message_types(buf[3], buf[10]));
+		printf("%s(%s)\n", (i>10)?" ":"", hm_message_types(buf[3], (len > 10) ? buf[10] : 0));
 	}
 }
 
@@ -193,9 +198,13 @@ static int parse_hmcfgusb(uint8_t *buf, int buf_len, void *data)
 
 	switch(buf[0]) {
 		case 'E':
+			if (buf_len < 14)
+				break;
 			dissect_hm(buf + 13, buf[13] + 1);
 			break;
 		case 'H':
+			if (buf_len < 30)
+				break;
 			if ((buf[27] != 0x00) ||
 			    (buf[28] != 0x00) ||
 			    (buf[29] != 0x00)) {
@@ -230,9 +239,13 @@ static int parse_hmuartlgw(enum hmuartlgw_dst dst, uint8_t *buf, int buf_len, vo
 	}
 
 	switch(buf[0]) {
-		case HMUARTLGW_APP_RECV:
+		case HMUARTLGW_APP_RECV: {
+			uint8_t saved = buf[3];
 			buf[3] = buf_len - 4;
 			dissect_hm(buf + 3, buf_len - 3);
+			buf[3] = saved;
+			break;
+		}
 		case HMUARTLGW_APP_ACK:
 			break;
 		default:
@@ -284,7 +297,7 @@ int main(int argc, char **argv)
 				break;
 			case 'V':
 				printf("hmsniff " VERSION "\n");
-				printf("Copyright (c) 2013-16 Michael Gernoth\n\n");
+				printf("Copyright (c) 2013-20 Michael Gernoth\n\n");
 				exit(EXIT_SUCCESS);
 			case 'h':
 			case ':':
@@ -335,7 +348,14 @@ int main(int argc, char **argv)
 			buf[2] = 0x00;
 			buf[3] = 0x00;
 			hmuartlgw_send(dev.hmuartlgw, buf, 4, HMUARTLGW_APP);
-			do { hmuartlgw_poll(dev.hmuartlgw, 500); } while (errno != ETIMEDOUT);
+			{
+				int i;
+				for (i = 0; i < 20; i++) {
+					hmuartlgw_poll(dev.hmuartlgw, 500);
+					if (errno == ETIMEDOUT)
+						break;
+				}
+			}
 			if (speed == 100) {
 				buf[0] = HMUARTLGW_OS_UPDATE_MODE;
 				buf[1] = 0xe9;
