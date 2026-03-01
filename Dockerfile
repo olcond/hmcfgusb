@@ -1,29 +1,29 @@
 # HMCFGUSB
 # http://git.zerfleddert.de/cgi-bin/gitweb.cgi/hmcfgusb
-FROM alpine:3.23
+FROM alpine:3.23 AS builder
 
-# Package version
-ARG HMCFGUSB_VER=0.104
-
-COPY * /app/hmcfgusb
+COPY . /app/hmcfgusb
 WORKDIR /app/hmcfgusb
 
-# Install build packages
-RUN apk add --no-cache --virtual=build-dependencies \
-            build-base \
-            clang cmake ccache \
-            libusb-dev \
-# Install runtime packages
- && apk add --no-cache --update \
-            libusb \
-            ca-certificates \
-# Install app
- && cd /app/hmcfgusb \
- && clang --version && make \
-# Cleanup
- && apk del --purge build-dependencies \
- && rm *.h *.o *.c *.d
- 
+RUN apk add --no-cache \
+        build-base \
+        clang \
+        libusb-dev \
+ && clang --version && make
+
+FROM alpine:3.23
+
+RUN apk add --no-cache \
+        libusb \
+        ca-certificates
+
+COPY --from=builder /app/hmcfgusb/hmland \
+                    /app/hmcfgusb/hmsniff \
+                    /app/hmcfgusb/flash-hmcfgusb \
+                    /app/hmcfgusb/flash-hmmoduart \
+                    /app/hmcfgusb/flash-ota \
+                    /app/hmcfgusb/
+
 EXPOSE 1234
 
-CMD ["/app/hmcfgusb/hmland", "-v", "-p 1234", "-I"]
+CMD ["/app/hmcfgusb/hmland", "-v", "-p", "1234", "-I"]
