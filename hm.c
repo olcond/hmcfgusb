@@ -1,6 +1,6 @@
 /* HomeMatic protocol-functions
  *
- * Copyright (c) 2014-16 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2014-20 Michael Gernoth <michael@gernoth.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -37,6 +37,11 @@
 
 static int debug = 0;
 
+void hm_set_debug(int d)
+{
+	debug = d;
+}
+
 uint8_t* hm_sign(uint8_t *key, uint8_t *challenge, uint8_t *m_frame, uint8_t *exp_auth, uint8_t *resp)
 {
 	uint8_t signkey[16];
@@ -61,7 +66,10 @@ uint8_t* hm_sign(uint8_t *key, uint8_t *challenge, uint8_t *m_frame, uint8_t *ex
 	/*
 	 * Generate payload for first encryption.
 	 */
-	gettimeofday(&tv, NULL);
+	if (gettimeofday(&tv, NULL) == -1) {
+		perror("gettimeofday");
+		return NULL;
+	}
 	resp[0] = tv.tv_sec >> 24 & 0xff;
 	resp[1] = tv.tv_sec >> 16 & 0xff;
 	resp[2] = tv.tv_sec >> 8 & 0xff;

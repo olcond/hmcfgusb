@@ -1,6 +1,6 @@
 /* HomeMatic defines and functions
  *
- * Copyright (c) 2014-16 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2014-20 Michael Gernoth <michael@gernoth.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -20,6 +20,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+
+#ifndef HM_H
+#define HM_H
 
 #define LEN	0x00
 #define MSGID	0x01
@@ -49,4 +52,7 @@ struct hm_dev {
 	struct hmuartlgw_dev *hmuartlgw;
 };
 
+void hm_set_debug(int d);
 uint8_t* hm_sign(uint8_t *key, uint8_t *challenge, uint8_t *m_frame, uint8_t *exp_auth, uint8_t *resp);
+
+#endif /* HM_H */
