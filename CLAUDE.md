@@ -83,11 +83,12 @@ make clean
 ```
 
 **Compiler:** Clang (default; override with `CC=gcc make`)
-**Flags:** `-MMD -O2 -march=x86-64-v3 -mtune=cannonlake -Wall -Wextra -g`
+**Flags (x86_64):** `-MMD -O2 -march=x86-64-v3 -mtune=cannonlake -Wall -Wextra -g`
+**Flags (other):** `-MMD -O2 -Wall -Wextra -g`
 **Libraries:** `libusb-1.0`, `librt`
 **Extra paths:** `-I/opt/local/include`, `-L/opt/local/lib`
 
-**Note:** The architecture-specific flags (`-march=x86-64-v3 -mtune=cannonlake`) are currently hardcoded — the `ifeq ($(UNAME_P),x86_64)` conditional in the Makefile is commented out. Building on non-x86_64 platforms (e.g. ARM/Raspberry Pi) requires manually adjusting `CFLAGS` in the Makefile or passing them via the command line (`CFLAGS="-MMD -O2 -Wall -Wextra -g" make`).
+**Note:** The Makefile detects the architecture via `uname -p` and applies `-march=x86-64-v3 -mtune=cannonlake` only on x86_64. ARM and other platforms (e.g. Raspberry Pi) get plain `-O2` automatically.
 
 ### Build Targets and Their Object Dependencies
 
@@ -113,16 +114,14 @@ docker build -t hmcfgusb .
 docker run -p 1234:1234 hmcfgusb   # runs hmland -v -p 1234 -I
 ```
 
-The Dockerfile uses **Alpine Linux 3.23** with `clang`, `cmake`, `ccache`, and `libusb-dev`.
+The Dockerfile uses a **multi-stage build** on **Alpine Linux 3.23**.
 
-- **Build ARG:** `HMCFGUSB_VER=0.104` (declared but currently unused in the build)
-- **Build deps:** `build-base`, `clang`, `cmake`, `ccache`, `libusb-dev` (removed after build)
-- **Runtime deps:** `libusb`, `ca-certificates`
+- **Builder stage deps:** `build-base`, `clang`, `libusb-dev`
+- **Final image deps:** `libusb`, `ca-certificates`
+- **Binaries copied:** `hmland`, `hmsniff`, `flash-hmcfgusb`, `flash-hmmoduart`, `flash-ota` → `/app/hmcfgusb/`
 - **Exposed port:** 1234
-- **CMD:** `/app/hmcfgusb/hmland -v -p 1234 -I`
-- **Cleanup:** Removes `*.h`, `*.o`, `*.c`, `*.d` files after compilation
-
-**Known issue:** The Dockerfile CMD uses `"-p 1234"` as a single JSON array element instead of separate `"-p", "1234"` arguments. This may cause argument parsing issues depending on how hmland handles it.
+- **CMD:** `["/app/hmcfgusb/hmland", "-v", "-p", "1234", "-I"]`
+- No source code or build tools present in the final image
 
 ### Debian Packaging
 
@@ -241,8 +240,7 @@ This is a C codebase. Follow the existing style:
 
 ### Branching Strategy
 
-- `main` — stable release branch (remote)
-- `master` — development branch
+- `main` — primary branch (stable, all merges go here)
 - Feature/fix branches use the pattern `claude/<feature>-<id>` for AI-assisted work
 
 ### Commit Messages
@@ -272,12 +270,12 @@ feat: add support for HM-LGW-O-TW-W-EU network gateway
 **Permissions:** `contents: read`, `packages: write`, `id-token: write` (for OIDC-based Cosign signing)
 
 **Steps:**
-1. Login to ghcr.io and Docker Hub
-2. Checkout repository
+1. Checkout repository
+2. Login to ghcr.io and Docker Hub
 3. Install Cosign for image signing
 4. Setup QEMU and Docker Buildx
-5. Generate image metadata and tags
-6. Build and push Docker image (Linux amd64 only — ARM platforms are commented out)
+5. Generate image metadata and tags (targets both ghcr.io and DockerHub)
+6. Build and push Docker image (`linux/amd64`, `linux/arm/v7`, `linux/arm64`) — push only on `main`, tags, and scheduled builds
 7. Sign published images with Cosign using GitHub OIDC tokens
 
 **Action versions (pinned by SHA, managed by Renovate):**
@@ -366,8 +364,8 @@ attr hmusb hmId <hmId>
 ### Flash HM-CFG-USB Firmware
 
 ```bash
-# Download firmware first, then:
-./flash-hmcfgusb hmusbif.03c7.enc
+# Download firmware from eQ-3, then:
+./flash-hmcfgusb hmusbif.XXXX.enc
 ```
 
 ### Over-the-Air Device Firmware Update
@@ -441,8 +439,4 @@ attr hmusb hmId <hmId>
 
 ## Known Discrepancies and Notes
 
-1. **Version mismatch:** `version.h` defines `VERSION "0.103-git"` while the Dockerfile declares `ARG HMCFGUSB_VER=0.104`. The ARG is currently unused in the build.
-2. **Hardcoded x86-64 flags:** The Makefile `CFLAGS` include `-march=x86-64-v3 -mtune=cannonlake` unconditionally (the architecture detection `ifeq` is commented out). This will cause build failures on non-x86_64 targets like Raspberry Pi.
-3. **Dockerfile CMD format:** The CMD array uses `"-p 1234"` as a single element instead of `"-p", "1234"` as separate elements, which may cause argument parsing issues.
-4. **Docker platform support:** The CI workflow only builds for `linux/amd64`. ARM platforms (`linux/arm/v7`, `linux/arm64`) are commented out in the workflow file.
-5. **Debian packaging age:** The `debian/changelog` was last updated 2016-01-23 (version 0.103-1). The packaging still uses `Standards-Version: 3.9.3` and `debhelper (>= 8.0.0)`, which are significantly outdated.
+1. **Debian packaging age:** The `debian/changelog` was last updated 2016-01-23 (version 0.103-1). The packaging still uses `Standards-Version: 3.9.3` and `debhelper (>= 8.0.0)`, which are significantly outdated.
