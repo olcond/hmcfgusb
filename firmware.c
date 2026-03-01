@@ -375,7 +375,6 @@ struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 		if (debug)
 			printf("Firmware block %d with length %u read.\n", fw->fw_blocks, len);
 
-		memset(buf, 0, sizeof(buf));
 		r = read(fd, buf, 4);
 		if (r < 0) {
 			perror("read");

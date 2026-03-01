@@ -303,14 +303,12 @@ static void test_firmware_read_ihex(void)
 
 static void test_firmware_free_null_blocks(void)
 {
-	/* Allocate a firmware struct with 0 blocks, then free it */
+	/* firmware_free() with 0 blocks should not crash */
 	struct firmware *fw = malloc(sizeof(struct firmware));
 	assert(fw != NULL);
 	fw->fw = NULL;
 	fw->fw_blocks = 0;
-	/* Should not crash */
-	free(fw->fw);
-	free(fw);
+	firmware_free(fw);
 }
 
 /* ── main ───────────────────────────────────────────────────────── */
