@@ -1,16 +1,16 @@
 Source: hmcfgusb
 Section: misc
-Priority: extra
-Maintainer: JSurf <jsurf@gmx.de>
-Build-Depends: debhelper (>= 8.0.0), libusb-1.0-0-dev
-Standards-Version: 3.9.3
-Homepage: http://git.zerfleddert.de/cgi-bin/gitweb.cgi/hmcfgusb
-#Vcs-Git: https://github.com/JSUrf/hmcfgusb.git
-#Vcs-Browser: https://github.com/JSurf/hmcfgusb
+Priority: optional
+Maintainer: volschin <volschin@googlemail.com>
+Build-Depends: debhelper-compat (= 13), libusb-1.0-0-dev
+Standards-Version: 4.7.0
+Homepage: https://github.com/olcond/hmcfgusb
+Vcs-Git: https://github.com/olcond/hmcfgusb.git
+Vcs-Browser: https://github.com/olcond/hmcfgusb
 
 Package: hmcfgusb
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: hmland daemon and utilities
-  utilities to use the HM-CFG-USB(2) (HomeMatic USB Konfigurations-Adapter) 
-  from ELV on Linux/Unix by using libusb 1.0.
+ Utilities to use the HM-CFG-USB(2) (HomeMatic USB Konfigurations-Adapter)
+ from ELV on Linux/Unix by using libusb 1.0.
