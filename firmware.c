@@ -32,7 +32,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/time.h>
-#include <unistd.h>
 
 #include "util.h"
 #include "firmware.h"
@@ -269,7 +268,7 @@ struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 
 	fd = open(filename, O_RDONLY);
 	if (fd < 0) {
-		fprintf(stderr, "Can't open %s: %s", filename, strerror(errno));
+		fprintf(stderr, "Can't open %s: %s\n", filename, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 

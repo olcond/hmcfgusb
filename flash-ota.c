@@ -122,9 +122,6 @@ static int parse_hmcfgusb(uint8_t *buf, int buf_len, void *data)
 			break;
 	}
 
-	if (buf_len != 1)
-		return 1;
-
 	return 1;
 }
 
@@ -551,7 +548,7 @@ int send_hm_message(struct hm_dev *dev, struct recv_data *rdata, uint8_t *msg)
 				pfd = hmuartlgw_poll(dev->hmuartlgw, 1000);
 				if ((pfd < 0) && errno) {
 					if (errno != ETIMEDOUT) {
-						perror("\n\nhmcfgusb_poll");
+						perror("\n\nhmuartlgw_poll");
 						exit(EXIT_FAILURE);
 					}
 				}
@@ -775,7 +772,7 @@ int main(int argc, char **argv)
 			pfd = culfw_poll(dev.culfw, 1000);
 			if ((pfd < 0) && errno) {
 				if (errno != ETIMEDOUT) {
-					perror("\n\nhmcfgusb_poll");
+					perror("\n\nculfw_poll");
 					exit(EXIT_FAILURE);
 				}
 			}
@@ -797,7 +794,7 @@ int main(int argc, char **argv)
 				pfd = culfw_poll(dev.culfw, 1000);
 				if ((pfd < 0) && errno) {
 					if (errno != ETIMEDOUT) {
-						perror("\n\nhmcfgusb_poll");
+						perror("\n\nculfw_poll");
 						exit(EXIT_FAILURE);
 					}
 				}
@@ -823,7 +820,7 @@ int main(int argc, char **argv)
 					pfd = culfw_poll(dev.culfw, 1000);
 					if ((pfd < 0) && errno) {
 						if (errno != ETIMEDOUT) {
-							perror("\n\nhmcfgusb_poll");
+							perror("\n\nculfw_poll");
 							exit(EXIT_FAILURE);
 						}
 					}
