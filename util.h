@@ -1,6 +1,6 @@
 /* utility functions
  *
- * Copyright (c) 2014-16 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2014-20 Michael Gernoth <michael@gernoth.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -21,6 +21,11 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef UTIL_H
+#define UTIL_H
+
 uint8_t ascii_to_nibble(uint8_t a);
 int validate_nibble(uint8_t a);
 char nibble_to_ascii(uint8_t n);
+
+#endif /* UTIL_H */
