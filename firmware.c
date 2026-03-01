@@ -29,7 +29,6 @@
 #include <strings.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/time.h>
 
@@ -73,7 +72,7 @@ static uint16_t crc16(const uint8_t* buf, int length, uint16_t crc)
 
 static struct firmware* firmware_read_ihex(int fd, struct firmware *fw, int atmega, int debug)
 {
-	uint8_t buf[2*MAX_BLOCK_LENGTH];
+	uint8_t buf[2*MAX_BLOCK_LENGTH + 2];
 	uint8_t image[HEX_IMAGE_SIZE_MAX];
 	uint16_t len = 0;
 	uint16_t addr = 0;
@@ -114,7 +113,7 @@ static struct firmware* firmware_read_ihex(int fd, struct firmware *fw, int atme
 			fprintf(stderr, "EOF without EOF record, Firmware file not valid!\n");
 			exit(EXIT_FAILURE);
 		} else if (r != len) {
-			printf("can't get record information!\n");
+			fprintf(stderr, "can't get record information!\n");
 			exit(EXIT_FAILURE);
 		}
 
@@ -145,6 +144,11 @@ static struct firmware* firmware_read_ihex(int fd, struct firmware *fw, int atme
 			exit(EXIT_FAILURE);
 		}
 
+		if (type == 0x00 && (uint32_t)addr + len > HEX_IMAGE_SIZE_MAX) {
+			fprintf(stderr, "ihex record at 0x%04x with length %u exceeds image size!\n", addr, len);
+			exit(EXIT_FAILURE);
+		}
+
 		if (type == 0x00) {
 			r = read(fd, buf, (len * 2) + 2 /* crc */);
 			if (r < 0) {
@@ -166,6 +170,25 @@ static struct firmware* firmware_read_ihex(int fd, struct firmware *fw, int atme
 
 				image[addr + (i/2)] = (ascii_to_nibble(buf[i]) & 0xf)<< 4;
 				image[addr + (i/2)] |= ascii_to_nibble(buf[i+1]) & 0xf;
+			}
+
+			if ((!validate_nibble(buf[len * 2])) ||
+			    (!validate_nibble(buf[len * 2 + 1]))) {
+				fprintf(stderr, "Firmware file not valid!\n");
+				exit(EXIT_FAILURE);
+			}
+
+			{
+				uint8_t chksum = (uint8_t)len + ((addr >> 8) & 0xff) + (addr & 0xff) + (uint8_t)type;
+				int j;
+
+				for (j = 0; j < len; j++)
+					chksum += image[addr + j];
+				chksum += (ascii_to_nibble(buf[len * 2]) << 4) | ascii_to_nibble(buf[len * 2 + 1]);
+				if (chksum != 0) {
+					fprintf(stderr, "ihex checksum error at address 0x%04x!\n", addr);
+					exit(EXIT_FAILURE);
+				}
 			}
 
 			while (1) {
@@ -246,7 +269,6 @@ static struct firmware* firmware_read_ihex(int fd, struct firmware *fw, int atme
 struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 {
 	struct firmware *fw;
-	struct stat stat_buf;
 	uint8_t buf[2*MAX_BLOCK_LENGTH];
 	uint16_t len;
 	int fd;
@@ -260,11 +282,6 @@ struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 	}
 
 	memset(fw, 0, sizeof(struct firmware));
-
-	if (stat(filename, &stat_buf) == -1) {
-		fprintf(stderr, "Can't stat %s: %s\n", filename, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
 
 	fd = open(filename, O_RDONLY);
 	if (fd < 0) {
@@ -283,8 +300,12 @@ struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 
 	//Intel hex?
 	if (buf[0] == ':') {
+		struct firmware *ret;
+
 		printf("HEX file detected (AsksinPP)\n");
-		return firmware_read_ihex(fd, fw, atmega, debug);
+		ret = firmware_read_ihex(fd, fw, atmega, debug);
+		close(fd);
+		return ret;
 	}
 
 	if (lseek(fd, 0, SEEK_SET) != 0) {
@@ -301,7 +322,7 @@ struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 		} else if (r == 0) {
 			break;
 		} else if (r != 4) {
-			printf("can't get length information!\n");
+			fprintf(stderr, "can't get length information!\n");
 			exit(EXIT_FAILURE);
 		}
 
@@ -372,6 +393,7 @@ struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 
 	printf("Firmware with %d blocks successfully read.\n", fw->fw_blocks);
 
+	close(fd);
 	return fw;
 }
 

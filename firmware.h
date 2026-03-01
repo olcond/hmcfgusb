@@ -21,6 +21,9 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef FIRMWARE_H
+#define FIRMWARE_H
+
 struct firmware {
 	uint8_t **fw;
 	int fw_blocks;
@@ -34,3 +37,5 @@ enum atmega_device {
 
 struct firmware* firmware_read_firmware(char *filename, int atmega, int debug);
 void firmware_free(struct firmware *fw);
+
+#endif /* FIRMWARE_H */
