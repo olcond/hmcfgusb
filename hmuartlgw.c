@@ -1,6 +1,6 @@
 /* HM-MOD-UART/HM-LGW-O-TW-W-EU driver
  *
- * Copyright (c) 2016-17 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2016-20 Michael Gernoth <michael@gernoth.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -136,24 +136,24 @@ static int hmuartlgw_init_parse(enum hmuartlgw_dst dst, uint8_t *buf, int buf_le
 
 	/* Re-send commands for DualCopro Firmware */
 	if (dst == HMUARTLGW_DUAL_ERR) {
-		uint8_t buf[128] = { 0 };
+		uint8_t cmdbuf[128] = { 0 };
 
 		switch(rdata->state) {
 			case HMUARTLGW_QUERY_APPSTATE:
 				if (debug) {
-					printf("Re-sending appstate-query for new firmare\n");
+					printf("Re-sending appstate-query for new firmware\n");
 				}
 
-				buf[0] = HMUARTLGW_DUAL_GET_APP;
-				hmuartlgw_send(rdata->dev, buf, 1, HMUARTLGW_DUAL);
+				cmdbuf[0] = HMUARTLGW_DUAL_GET_APP;
+				hmuartlgw_send(rdata->dev, cmdbuf, 1, HMUARTLGW_DUAL);
 				break;
 			case HMUARTLGW_ENTER_BOOTLOADER:
 				if (debug) {
-					printf("Re-sending switch to bootloader for new firmare\n");
+					printf("Re-sending switch to bootloader for new firmware\n");
 				}
 
-				buf[0] = HMUARTLGW_DUAL_CHANGE_APP;
-				hmuartlgw_send(rdata->dev, buf, 1, HMUARTLGW_DUAL);
+				cmdbuf[0] = HMUARTLGW_DUAL_CHANGE_APP;
+				hmuartlgw_send(rdata->dev, cmdbuf, 1, HMUARTLGW_DUAL);
 				break;
 			default:
 				fprintf(stderr, "Don't know how to handle this error-state (%d) for unsupported firmware, giving up!\n", rdata->state);
@@ -224,7 +224,7 @@ static int hmuartlgw_init_parse(enum hmuartlgw_dst dst, uint8_t *buf, int buf_le
 struct hmuartlgw_dev *hmuart_init(char *device, hmuartlgw_cb_fn cb, void *data, int app)
 {
 	struct hmuartlgw_dev *dev = NULL;
-	struct termios oldtio, tio;
+	struct termios tio;
 
 	dev = malloc(sizeof(struct hmuartlgw_dev));
 	if (dev == NULL) {
@@ -244,7 +244,7 @@ struct hmuartlgw_dev *hmuart_init(char *device, hmuartlgw_cb_fn cb, void *data, 
 		fprintf(stderr, "%s opened\n", device);
 	}
 
-	if (tcgetattr(dev->fd, &oldtio) == -1) {
+	if (tcgetattr(dev->fd, &dev->oldtio) == -1) {
 		perror("tcgetattr");
 		goto out2;
 	}
@@ -496,6 +496,15 @@ int hmuartlgw_poll(struct hmuartlgw_dev *dev, int timeout)
 		return -1;
 	}
 
+	if (dev->pos >= (int)sizeof(dev->buf)) {
+		fprintf(stderr, "hmuartlgw: receive buffer overflow, resetting\n");
+		memset(dev->buf, 0, sizeof(dev->buf));
+		dev->pos = 0;
+		dev->unescape_next = 0;
+		errno = EIO;
+		return -1;
+	}
+
 	r = read(dev->fd, dev->buf+dev->pos, 1);
 	if (r < 0)
 		return -1;
@@ -547,7 +556,7 @@ int hmuartlgw_poll(struct hmuartlgw_dev *dev, int timeout)
 	} else {
 		fprintf(stderr, "Invalid checksum received!\n");
 		hexdump(dev->buf, dev->pos, "ERR> ");
-		printf("calculated: %04x\n", crc);
+		fprintf(stderr, "calculated: %04x\n", crc);
 
 		memset(dev->buf, 0, sizeof(dev->buf));
 		dev->pos = 0;
@@ -560,7 +569,9 @@ int hmuartlgw_poll(struct hmuartlgw_dev *dev, int timeout)
 
 void hmuartlgw_close(struct hmuartlgw_dev *dev)
 {
+	tcsetattr(dev->fd, TCSANOW, &dev->oldtio);
 	close(dev->fd);
+	free(dev);
 }
 
 void hmuartlgw_flush(struct hmuartlgw_dev *dev)

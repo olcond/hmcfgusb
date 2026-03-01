@@ -1,6 +1,6 @@
 /* HM-MOD-UART/HM-LGW-O-TW-W-EU driver
  *
- * Copyright (c) 2016-17 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2016-20 Michael Gernoth <michael@gernoth.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -20,6 +20,11 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+
+#ifndef HMUARTLGW_H
+#define HMUARTLGW_H
+
+#include <termios.h>
 
 #define HMUARTLGW_OS_GET_APP		0x00
 #define HMUARTLGW_OS_GET_FIRMWARE	0x02
@@ -63,6 +68,7 @@ typedef int (*hmuartlgw_cb_fn)(enum hmuartlgw_dst dst, uint8_t *buf, int buf_len
 
 struct hmuartlgw_dev {
 	int fd;
+	struct termios oldtio;
 	hmuartlgw_cb_fn cb;
 	void *cb_data;
 	uint8_t last_send_cnt;
@@ -81,3 +87,5 @@ void hmuartlgw_flush(struct hmuartlgw_dev *dev);
 void hmuartlgw_enter_bootloader(struct hmuartlgw_dev *dev);
 void hmuartlgw_enter_app(struct hmuartlgw_dev *dev);
 void hmuartlgw_set_debug(int d);
+
+#endif /* HMUARTLGW_H */
