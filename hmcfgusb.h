@@ -21,6 +21,8 @@
  * IN THE SOFTWARE.
  */
 
+#define HMCFGUSB_FRAME_SIZE	0x40
+
 typedef int (*hmcfgusb_cb_fn)(uint8_t *buf, int buf_len, void *data);
 
 struct hmcfgusb_dev {

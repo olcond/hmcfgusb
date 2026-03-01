@@ -403,7 +403,7 @@ static int hmlan_format_out(uint8_t *buf, int buf_len, void *data)
 static int hmlan_parse_one(uint8_t *cmd, int last, void *data)
 {
 	struct hmcfgusb_dev *dev = data;
-	uint8_t out[0x40]; //FIXME!!!
+	uint8_t out[HMCFGUSB_FRAME_SIZE];
 	uint8_t *outpos;
 	uint8_t *inpos = cmd;
 
@@ -508,7 +508,7 @@ static int hmlan_parse_in(int fd, void *data)
 static int comm(int fd_in, int fd_out, int master_socket, int flags)
 {
 	struct hmcfgusb_dev *dev;
-	uint8_t out[0x40]; //FIXME!!!
+	uint8_t out[HMCFGUSB_FRAME_SIZE];
 	int quit = 0;
 
 	hmcfgusb_set_debug(debug);
