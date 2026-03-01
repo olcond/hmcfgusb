@@ -1,6 +1,6 @@
 /* utility functions
  *
- * Copyright (c) 2014-16 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2014-20 Michael Gernoth <michael@gernoth.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -53,5 +53,5 @@ char nibble_to_ascii(uint8_t n)
 	const uint8_t nibble[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'A', 'B', 'C', 'D', 'E', 'F'};
 
-	return nibble[n];
+	return nibble[n & 0xf];
 }
