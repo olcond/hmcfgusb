@@ -308,25 +308,15 @@ struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 		return ret;
 	}
 
-	if (lseek(fd, 0, SEEK_SET) != 0) {
-		perror("lseek");
+	/* eq3 format: first byte already in buf[0], read remaining 3 */
+	r = read(fd, buf + 1, 3);
+	if (r != 3) {
+		fprintf(stderr, "can't get length information!\n");
 		exit(EXIT_FAILURE);
 	}
 
-	do {
-		memset(buf, 0, sizeof(buf));
-		r = read(fd, buf, 4);
-		if (r < 0) {
-			perror("read");
-			exit(EXIT_FAILURE);
-		} else if (r == 0) {
-			break;
-		} else if (r != 4) {
-			fprintf(stderr, "can't get length information!\n");
-			exit(EXIT_FAILURE);
-		}
-
-		for (i = 0; i < r; i++) {
+	for (;;) {
+		for (i = 0; i < 4; i++) {
 			if (!validate_nibble(buf[i])) {
 				fprintf(stderr, "Firmware file not valid!\n");
 				exit(EXIT_FAILURE);
@@ -384,7 +374,19 @@ struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
 		fw->fw_blocks++;
 		if (debug)
 			printf("Firmware block %d with length %u read.\n", fw->fw_blocks, len);
-	} while(r > 0);
+
+		memset(buf, 0, sizeof(buf));
+		r = read(fd, buf, 4);
+		if (r < 0) {
+			perror("read");
+			exit(EXIT_FAILURE);
+		} else if (r == 0) {
+			break;
+		} else if (r != 4) {
+			fprintf(stderr, "can't get length information!\n");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	if (fw->fw_blocks == 0) {
 		fprintf(stderr, "Firmware file not valid!\n");
