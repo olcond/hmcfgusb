@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 				break;
 			case 'V':
 				printf("flash-hmcfgusb " VERSION "\n");
-				printf("Copyright (c) 2013-16 Michael Gernoth\n\n");
+				printf("Copyright (c) 2013-20 Michael Gernoth\n\n");
 				exit(EXIT_SUCCESS);
 			case 'h':
 			case ':':
@@ -125,8 +125,10 @@ int main(int argc, char **argv)
 	}
 
 	if (!dev->bootloader) {
+		int retries = 0;
+
 		fprintf(stderr, "\nHM-CFG-USB not in bootloader mode, entering bootloader.\n");
-		fprintf(stderr, "\nWaiting for device to reappear...\n");
+		fprintf(stderr, "\nWaiting for device to reappear");
 
 		do {
 			if (dev) {
@@ -134,8 +136,15 @@ int main(int argc, char **argv)
 					hmcfgusb_enter_bootloader(dev);
 				hmcfgusb_close(dev);
 			}
+			fprintf(stderr, ".");
+			fflush(stderr);
 			sleep(1);
+			if (++retries > 30) {
+				fprintf(stderr, "\n\nDevice did not reappear after 30 seconds, aborting!\n");
+				exit(EXIT_FAILURE);
+			}
 		} while (((dev = hmcfgusb_init(parse_hmcfgusb, &rdata, serial)) == NULL) || (!dev->bootloader));
+		fprintf(stderr, "\n");
 	}
 
 	printf("\nHM-CFG-USB opened.\n\n");
@@ -181,7 +190,7 @@ int main(int argc, char **argv)
 		} while (pfd < 0);
 
 		if (rdata.ack == 2) {
-			printf("\n\nFirmware update successfull!\n");
+			printf("\n\nFirmware update successful!\n");
 			break;
 		}
 
