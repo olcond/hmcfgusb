@@ -37,10 +37,16 @@ flash-hmmoduart: $(FLASH_HMMODUART_OBJS)
 
 flash-ota: $(FLASH_OTA_OBJS)
 
-clean:
-	rm -f $(HMLAN_OBJS) $(HMSNIFF_OBJS) $(FLASH_HMCFGUSB_OBJS) $(FLASH_HMMODUART_OBJS) $(FLASH_OTA_OBJS) $(DEPEND) hmland hmsniff flash-hmcfgusb flash-hmmoduart flash-ota
+test_unit: test_unit.c util.o
+	$(CC) $(CFLAGS) -o $@ test_unit.c util.o
 
-.PHONY: all clean
+test: test_unit
+	./test_unit
+
+clean:
+	rm -f $(HMLAN_OBJS) $(HMSNIFF_OBJS) $(FLASH_HMCFGUSB_OBJS) $(FLASH_HMMODUART_OBJS) $(FLASH_OTA_OBJS) $(DEPEND) hmland hmsniff flash-hmcfgusb flash-hmmoduart flash-ota test_unit test_unit.d
+
+.PHONY: all clean test
 
 else
 

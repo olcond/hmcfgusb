@@ -1,0 +1,31 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        cc: [gcc, clang]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0-dev ${{ matrix.cc }}
+
+      - name: Run unit tests with ${{ matrix.cc }}
+        run: make test CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror"
+        env:
+          CFLAGS: -MMD -O2 -Wall -Wextra -I/opt/local/include -g

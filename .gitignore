@@ -27,5 +27,8 @@ hmuartlgw.d
 hmuartlgw.o
 util.d
 util.o
+test_unit
+test_unit.d
 *.enc
 *.eq3
+!testdata/*.eq3
