@@ -33,8 +33,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/time.h>
-#include <libusb-1.0/libusb.h>
-
 #include "hexdump.h"
 #include "firmware.h"
 #include "version.h"
@@ -88,7 +86,7 @@ int main(int argc, char **argv)
 				break;
 			case 'V':
 				printf("flash-hmmoduart " VERSION "\n");
-				printf("Copyright (c) 2016 Michael Gernoth\n\n");
+				printf("Copyright (c) 2016-20 Michael Gernoth\n\n");
 				exit(EXIT_SUCCESS);
 			case 'h':
 			case ':':
@@ -147,10 +145,10 @@ int main(int argc, char **argv)
 		len = fw->fw[block][2] << 8;
 		len |= fw->fw[block][3];
 
-		len -= 1; /* + frametype, - crc crc */
+		len -= 1; /* + frametype, - crc */
 
 		framedata = (fw->fw[block]) + 3;
-		framedata[0] = HMUARTLGW_OS_UPDATE_FIRMWARE;
+		framedata[0] = HMUARTLGW_OS_UPDATE_FIRMWARE; /* overwrites length low-byte, already saved in len */
 
 		if (debug)
 			hexdump(framedata, len, "F> ");
@@ -190,7 +188,7 @@ int main(int argc, char **argv)
 	}
 
 	if (rdata.ack == 0x0401) {
-		printf("\n\nFirmware update successfull!\n");
+		printf("\n\nFirmware update successful!\n");
 	}
 
 
