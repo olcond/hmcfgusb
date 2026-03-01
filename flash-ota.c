@@ -359,7 +359,7 @@ int send_hm_message(struct hm_dev *dev, struct recv_data *rdata, uint8_t *msg)
 	switch(dev->type) {
 		case DEVICE_TYPE_HMCFGUSB:
 			if (gettimeofday(&tv, NULL) == -1) {
-				perror("gettimeofay");
+				perror("gettimeofday");
 					return 0;
 			}
 
@@ -448,7 +448,6 @@ int send_hm_message(struct hm_dev *dev, struct recv_data *rdata, uint8_t *msg)
 
 				if (msg[CTL] & 0x20) {
 					int cnt = 5;
-					int pfd;
 					do {
 						errno = 0;
 						pfd = culfw_poll(dev->culfw, 200);
@@ -758,6 +757,8 @@ int main(int argc, char **argv)
 
 	memset(&rdata, 0, sizeof(rdata));
 	memset(&dev, 0, sizeof(struct hm_dev));
+
+	hm_set_debug(debug);
 
 	if (culfw_dev) {
 		printf("Opening culfw-device at path %s with speed %u\n", culfw_dev, bps);
@@ -1339,6 +1340,9 @@ int main(int argc, char **argv)
 			break;
 		case DEVICE_TYPE_CULFW:
 			culfw_close(dev.culfw);
+			break;
+		case DEVICE_TYPE_HMUARTLGW:
+			hmuartlgw_close(dev.hmuartlgw);
 			break;
 	}
 
