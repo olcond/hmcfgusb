@@ -48,24 +48,24 @@
 #define HEX_IMAGE_SIZE_644P	0xF000
 #define HEX_IMAGE_SIZE_MAX	0x10000
 
-static uint16_t crc16(uint8_t* buf, int length, uint16_t crc)
+static uint16_t crc16(const uint8_t* buf, int length, uint16_t crc)
 {
 	int i;
 	uint16_t flag;
 
 	while (length--) {
+		uint8_t byte = *buf++;
 		for (i = 0; i < 8; i++) {
 			flag = crc & 0x8000;
 			crc <<= 1;
-			if (*buf & 0x80) {
+			if (byte & 0x80) {
 				crc |= 1;
 			}
 			if (flag) {
 				crc ^= CRC16_POLY;
 			}
-			*buf <<= 1;
+			byte <<= 1;
 		}
-		buf++;
 	}
 
 	return crc;

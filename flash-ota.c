@@ -327,9 +327,16 @@ int send_wait_hmuartlgw(struct hm_dev *dev, struct recv_data *rdata, uint8_t *da
 	int cnt = 5;
 
 	do {
+		int poll_cnt = 20; /* 20 * 500ms = 10s timeout */
 		rdata->uartlgw_state = srcstate;
 		hmuartlgw_send(dev->hmuartlgw, data, data_len, dst);
-		do { hmuartlgw_poll(dev->hmuartlgw, 500); } while (rdata->uartlgw_state != dststate);
+		do {
+			hmuartlgw_poll(dev->hmuartlgw, 500);
+			if (--poll_cnt == 0) {
+				fprintf(stderr, "Timeout waiting for device response!\n");
+				return 0;
+			}
+		} while (rdata->uartlgw_state != dststate);
 		if (rdata->status != HMUARTLGW_ACK_EINPROGRESS)
 			break;
 		usleep(200*1000);

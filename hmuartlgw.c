@@ -290,9 +290,11 @@ out:
 
 struct hmuartlgw_dev *hmlgw_init(char *device, hmuartlgw_cb_fn cb, void *data)
 {
-	struct hmuartlgw_dev *dev = NULL;
-
-	return dev;
+	(void)device;
+	(void)cb;
+	(void)data;
+	fprintf(stderr, "hmlgw_init: HM-LGW network device support not implemented\n");
+	return NULL;
 }
 
 void hmuartlgw_enter_bootloader(struct hmuartlgw_dev *dev)
