@@ -189,7 +189,7 @@ static libusb_device_handle *hmcfgusb_find(int vid, int pid, char *serial) {
 				return NULL;
 			}
 
-			libusb_free_device_list(list, 0);
+			libusb_free_device_list(list, 1);
 			return devh;
 		}
 
@@ -461,7 +461,7 @@ struct hmcfgusb_dev *hmcfgusb_init(hmcfgusb_cb_fn cb, void *data, char *serial)
 		dev->pfd[i].revents = 0;
 	}
 
-	free(usb_pfd);
+	libusb_free_pollfds(usb_pfd);
 
 	dev->n_pfd = dev->n_usb_pfd;
 

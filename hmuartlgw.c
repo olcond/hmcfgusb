@@ -499,7 +499,7 @@ int hmuartlgw_poll(struct hmuartlgw_dev *dev, int timeout)
 		return -1;
 
 	if (r == 0) {
-		errno = EOF;
+		errno = EIO;
 		return -1;
 	}
 
