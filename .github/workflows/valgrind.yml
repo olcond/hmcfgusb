@@ -1,0 +1,30 @@
+name: Valgrind
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  memcheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0-dev gcc valgrind
+
+      - name: Build tests
+        run: make test_unit CC=gcc CFLAGS="${CFLAGS}"
+        env:
+          CFLAGS: -MMD -O0 -g -Wall -Wextra -Werror
+
+      - name: Run tests under Valgrind
+        run: valgrind --error-exitcode=1 --leak-check=full --show-leak-kinds=definite,indirect --errors-for-leak-kinds=definite,indirect --track-origins=yes ./test_unit

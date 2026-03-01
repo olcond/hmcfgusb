@@ -1,0 +1,27 @@
+name: Sanitizers
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  asan-ubsan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0-dev clang
+
+      - name: Run tests with AddressSanitizer + UndefinedBehaviorSanitizer
+        run: make test CC=clang CFLAGS="${CFLAGS}"
+        env:
+          CFLAGS: -MMD -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all -Wall -Wextra -Werror

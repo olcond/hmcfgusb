@@ -1,0 +1,40 @@
+name: Cross-compile
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  cross:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - arch: arm64
+            cc: aarch64-linux-gnu-gcc
+            pkg: gcc-aarch64-linux-gnu
+            dpkg_arch: arm64
+          - arch: armhf
+            cc: arm-linux-gnueabihf-gcc
+            pkg: gcc-arm-linux-gnueabihf
+            dpkg_arch: armhf
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install cross-compiler and dependencies
+        run: |
+          sudo dpkg --add-architecture ${{ matrix.dpkg_arch }}
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.pkg }} libusb-1.0-0-dev:${{ matrix.dpkg_arch }}
+
+      - name: Cross-compile for ${{ matrix.arch }}
+        run: make CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror"
+        env:
+          CFLAGS: -MMD -O2 -Wall -Wextra -I/opt/local/include -g
