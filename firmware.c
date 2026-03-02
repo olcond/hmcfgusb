@@ -266,7 +266,7 @@ static struct firmware* firmware_read_ihex(int fd, struct firmware *fw, int atme
 	return fw;
 }
 
-struct firmware* firmware_read_firmware(char *filename, int atmega, int debug)
+struct firmware* firmware_read_firmware(const char *filename, int atmega, int debug)
 {
 	struct firmware *fw;
 	uint8_t buf[2*MAX_BLOCK_LENGTH];

@@ -53,6 +53,6 @@ struct hm_dev {
 };
 
 void hm_set_debug(int d);
-uint8_t* hm_sign(uint8_t *key, uint8_t *challenge, uint8_t *m_frame, uint8_t *exp_auth, uint8_t *resp);
+uint8_t* hm_sign(const uint8_t *key, const uint8_t *challenge, const uint8_t *m_frame, uint8_t *exp_auth, uint8_t *resp);
 
 #endif /* HM_H */

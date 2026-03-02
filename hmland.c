@@ -102,7 +102,7 @@ static void print_timestamp(FILE *f)
 	fprintf(f, "%s.%06ld: ", ts, (long)tv.tv_usec);
 }
 
-static void write_log(const char *buf, int len, const char *fmt, ...)
+static void __attribute__((format(printf, 3, 4))) write_log(const char *buf, int len, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -117,18 +117,12 @@ static void write_log(const char *buf, int len, const char *fmt, ...)
 	if (fmt) {
 		if (logfile) {
 			va_start(ap, fmt);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 			vfprintf(logfile, fmt, ap);
-#pragma GCC diagnostic pop
 			va_end(ap);
 		}
 		if (verbose) {
 			va_start(ap, fmt);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 			vprintf(fmt, ap);
-#pragma GCC diagnostic pop
 			va_end(ap);
 		}
 	}
@@ -438,7 +432,7 @@ static int hmlan_parse_one(uint8_t *cmd, int last, void *data)
 			parse_part_in(&inpos, (last-(inpos-cmd)), &outpos, (sizeof(out)-(outpos-out)), 0);
 			parse_part_in(&inpos, (last-(inpos-cmd)), &outpos, (sizeof(out)-(outpos-out)), 0);
 			parse_part_in(&inpos, (last-(inpos-cmd)), &outpos, (sizeof(out)-(outpos-out)), FLAG_LENGTH_BYTE);
-			/* fallthrough */
+			__attribute__((fallthrough));
 		default:
 			parse_part_in(&inpos, (last-(inpos-cmd)), &outpos, (sizeof(out)-(outpos-out)), FLAG_IGNORE_COMMAS);
 			break;
@@ -512,13 +506,11 @@ static int hmlan_parse_in(int fd, void *data)
 	return 1;
 }
 
-static int comm(int fd_in, int fd_out, int master_socket, int flags)
+static int comm(int fd_in, int fd_out, int master_socket, int __attribute__((unused)) flags)
 {
 	struct hmcfgusb_dev *dev;
 	uint8_t out[HMCFGUSB_FRAME_SIZE];
 	int quit = 0;
-
-	(void)flags;
 
 	hmcfgusb_set_debug(debug);
 
@@ -633,14 +625,14 @@ static int comm(int fd_in, int fd_out, int master_socket, int flags)
 	return 1;
 }
 
-void sigterm_handler(int sig)
+__attribute__((noreturn)) void sigterm_handler(int __attribute__((unused)) sig)
 {
-	(void)sig;
+	if (unlink(PID_FILE) == -1) {
+		static const char msg[] = "Can't remove PID file\n";
+		write(STDERR_FILENO, msg, sizeof(msg) - 1);
+	}
 
-	if (unlink(PID_FILE) == -1)
-		perror("Can't remove PID file");
-
-	exit(EXIT_SUCCESS);
+	_exit(EXIT_SUCCESS);
 }
 
 #define FLAG_DAEMON	(1 << 0)

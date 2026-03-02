@@ -35,7 +35,7 @@ enum atmega_device {
 	ATMEGA_644P,
 };
 
-struct firmware* firmware_read_firmware(char *filename, int atmega, int debug);
+struct firmware* firmware_read_firmware(const char *filename, int atmega, int debug);
 void firmware_free(struct firmware *fw);
 
 #endif /* FIRMWARE_H */

@@ -23,7 +23,7 @@
 
 #include <inttypes.h>
 
-uint8_t ascii_to_nibble(uint8_t a)
+__attribute__((const)) uint8_t ascii_to_nibble(uint8_t a)
 {
 	uint8_t c = 0x00;
 
@@ -38,7 +38,7 @@ uint8_t ascii_to_nibble(uint8_t a)
 	return c;
 }
 
-int validate_nibble(uint8_t a)
+__attribute__((const)) int validate_nibble(uint8_t a)
 {
 	if (((a >= '0') && (a <= '9')) ||
 	    ((a >= 'A') && (a <= 'F')) ||
@@ -48,7 +48,7 @@ int validate_nibble(uint8_t a)
 	return 0;
 }
 
-char nibble_to_ascii(uint8_t n)
+__attribute__((const)) char nibble_to_ascii(uint8_t n)
 {
 	const uint8_t nibble[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'A', 'B', 'C', 'D', 'E', 'F'};

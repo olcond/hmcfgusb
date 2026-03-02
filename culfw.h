@@ -21,6 +21,9 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef CULFW_H
+#define CULFW_H
+
 #include <termios.h>
 
 #define DEFAULT_CUL_BPS	38400
@@ -34,8 +37,10 @@ struct culfw_dev {
 	void *cb_data;
 };
 
-struct culfw_dev *culfw_init(char *device, uint32_t speed, culfw_cb_fn cb, void *data);
+struct culfw_dev *culfw_init(const char *device, uint32_t speed, culfw_cb_fn cb, void *data);
 int culfw_send(struct culfw_dev *dev, const char *cmd, int cmdlen);
 int culfw_poll(struct culfw_dev *dev, int timeout);
 void culfw_close(struct culfw_dev *dev);
 void culfw_flush(struct culfw_dev *dev);
+
+#endif /* CULFW_H */

@@ -24,8 +24,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-uint8_t ascii_to_nibble(uint8_t a);
-int validate_nibble(uint8_t a);
-char nibble_to_ascii(uint8_t n);
+__attribute__((const)) uint8_t ascii_to_nibble(uint8_t a);
+__attribute__((const)) int validate_nibble(uint8_t a);
+__attribute__((const)) char nibble_to_ascii(uint8_t n);
 
 #endif /* UTIL_H */

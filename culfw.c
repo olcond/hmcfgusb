@@ -36,7 +36,7 @@
 
 #include "culfw.h"
 
-struct culfw_dev *culfw_init(char *device, uint32_t speed, culfw_cb_fn cb, void *data)
+struct culfw_dev *culfw_init(const char *device, uint32_t speed, culfw_cb_fn cb, void *data)
 {
 	struct culfw_dev *dev = NULL;
 	struct termios tio;

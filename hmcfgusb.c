@@ -123,7 +123,7 @@ static const char* usb_str_transfer_status(int e)
 	return unknerr;
 }
 
-static libusb_device_handle *hmcfgusb_find(int vid, int pid, char *serial) {
+static libusb_device_handle *hmcfgusb_find(int vid, int pid, const char *serial) {
 	libusb_device_handle *devh = NULL;
 	libusb_device **list;
 	ssize_t cnt;
@@ -340,7 +340,7 @@ out:
 	}
 }
 
-struct hmcfgusb_dev *hmcfgusb_init(hmcfgusb_cb_fn cb, void *data, char *serial)
+struct hmcfgusb_dev *hmcfgusb_init(hmcfgusb_cb_fn cb, void *data, const char *serial)
 {
 	libusb_device_handle *devh = NULL;
 	const struct libusb_pollfd **usb_pfd = NULL;

@@ -21,6 +21,9 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef HMCFGUSB_H
+#define HMCFGUSB_H
+
 #define HMCFGUSB_FRAME_SIZE	0x40
 
 typedef int (*hmcfgusb_cb_fn)(uint8_t *buf, int buf_len, void *data);
@@ -37,7 +40,7 @@ struct hmcfgusb_dev {
 
 int hmcfgusb_send(struct hmcfgusb_dev *usbdev, unsigned char* send_data, int len, int done);
 int hmcfgusb_send_null_frame(struct hmcfgusb_dev *usbdev, int silent);
-struct hmcfgusb_dev *hmcfgusb_init(hmcfgusb_cb_fn cb, void *data, char *serial);
+struct hmcfgusb_dev *hmcfgusb_init(hmcfgusb_cb_fn cb, void *data, const char *serial);
 int hmcfgusb_add_pfd(struct hmcfgusb_dev *dev, int fd, short events);
 int hmcfgusb_poll(struct hmcfgusb_dev *dev, int timeout);
 void hmcfgusb_enter_bootloader(struct hmcfgusb_dev *dev);
@@ -45,3 +48,5 @@ void hmcfgusb_leave_bootloader(struct hmcfgusb_dev *dev);
 void hmcfgusb_close(struct hmcfgusb_dev *dev);
 void hmcfgusb_exit(void);
 void hmcfgusb_set_debug(int d);
+
+#endif /* HMCFGUSB_H */

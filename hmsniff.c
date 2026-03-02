@@ -224,9 +224,8 @@ static int parse_hmcfgusb(uint8_t *buf, int buf_len, void *data)
 	return 1;
 }
 
-static int parse_hmuartlgw(enum hmuartlgw_dst dst, uint8_t *buf, int buf_len, void *data)
+static int parse_hmuartlgw(enum hmuartlgw_dst dst, uint8_t *buf, int buf_len, void __attribute__((unused)) *data)
 {
-	(void)data;
 
 	if (dst == HMUARTLGW_OS) {
 		if ((buf[0] != HMUARTLGW_OS_ACK) ||

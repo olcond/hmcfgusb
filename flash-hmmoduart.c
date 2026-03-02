@@ -42,11 +42,9 @@ struct recv_data {
 	uint16_t ack;
 };
 
-static int parse_hmuartlgw(enum hmuartlgw_dst dst, uint8_t *buf, int buf_len, void *data)
+static int parse_hmuartlgw(enum hmuartlgw_dst __attribute__((unused)) dst, uint8_t *buf, int buf_len, void *data)
 {
 	struct recv_data *rdata = data;
-
-	(void)dst;
 
 	if (buf_len != 2)
 		return 1;

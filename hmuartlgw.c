@@ -221,7 +221,7 @@ static int hmuartlgw_init_parse(enum hmuartlgw_dst dst, uint8_t *buf, int buf_le
         return 1;
 }
 
-struct hmuartlgw_dev *hmuart_init(char *device, hmuartlgw_cb_fn cb, void *data, int app)
+struct hmuartlgw_dev *hmuart_init(const char *device, hmuartlgw_cb_fn cb, void *data, int app)
 {
 	struct hmuartlgw_dev *dev = NULL;
 	struct termios tio;
@@ -288,11 +288,8 @@ out:
 	return NULL;
 }
 
-struct hmuartlgw_dev *hmlgw_init(char *device, hmuartlgw_cb_fn cb, void *data)
+struct hmuartlgw_dev *hmlgw_init(const char __attribute__((unused)) *device, hmuartlgw_cb_fn __attribute__((unused)) cb, void __attribute__((unused)) *data)
 {
-	(void)device;
-	(void)cb;
-	(void)data;
 	fprintf(stderr, "hmlgw_init: HM-LGW network device support not implemented\n");
 	return NULL;
 }
