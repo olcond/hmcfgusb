@@ -39,7 +39,7 @@ hmcfgusb/
 │   ├── Dockerfile             # Alpine-based Docker image
 │   ├── debian/                # Debian package metadata (see Debian Packaging section)
 │   │   ├── control            # Package metadata and dependencies
-│   │   ├── changelog          # Release history (latest: 0.103-1)
+│   │   ├── changelog          # Release history (latest: 0.103-2)
 │   │   ├── rules              # debhelper build rules
 │   │   ├── install            # File installation list → /opt/hm/hmcfgusb/
 │   │   ├── hmcfgusb.links     # Symlinks from /opt/hm/hmcfgusb/ to /usr/{s,}bin/
@@ -57,7 +57,16 @@ hmcfgusb/
 │   └── init.hmland.OpenWRT    # Procd init script for OpenWRT
 ├── CI/CD
 │   └── .github/workflows/
-│       ├── docker-image.yml   # Docker build + publish + signing
+│       ├── docker-image.yml   # Docker build + publish + signing (multi-arch)
+│       ├── build.yml          # gcc + clang compile check
+│       ├── cross-compile.yml  # ARM cross-compilation (armhf, arm64)
+│       ├── test.yml           # Unit tests (gcc + clang)
+│       ├── sanitizers.yml     # ASan + UBSan
+│       ├── valgrind.yml       # Memcheck
+│       ├── release.yml        # Auto-tag + binary release + .deb
+│       ├── analysis.yml       # Static analysis
+│       ├── codeql.yml         # CodeQL security scanning
+│       ├── deb.yml            # Debian package build
 │       └── renovate.json5     # Automated dependency updates config
 └── Documentation
     ├── README.md
@@ -147,16 +156,16 @@ dpkg-buildpackage -us -uc
 
 ## Source Code Modules
 
-### `hmcfgusb.c / .h` — USB Driver (632 lines)
+### `hmcfgusb.c / .h` — USB Driver
 
 Wraps libusb-1.0 for the HM-CFG-USB device.
 
 - **USB IDs:** `0x1b1f:0xc00f` (normal mode), `0x1b1f:0xc010` (bootloader mode)
 - **USB timeout:** `USB_TIMEOUT = 10000 ms`
-- **Frame size:** 64 bytes async transfers at 32 ms intervals
-- Key functions: `hmcfgusb_send()`, `hmcfgusb_poll()`, `hmcfgusb_enter_bootloader()`, `hmcfgusb_leave_bootloader()`, `hmcfgusb_enumerate()`
+- **Frame size:** 64 bytes (`HMCFGUSB_FRAME_SIZE`) async transfers at 32 ms intervals
+- Key functions: `hmcfgusb_init()`, `hmcfgusb_send()`, `hmcfgusb_poll()`, `hmcfgusb_enter_bootloader()`, `hmcfgusb_leave_bootloader()`
 
-### `hmland.c` — LAN Emulation Daemon (920 lines)
+### `hmland.c` — LAN Emulation Daemon
 
 TCP server that emulates the HomeMatic LAN adapter protocol.
 
@@ -170,11 +179,11 @@ TCP server that emulates the HomeMatic LAN adapter protocol.
   - `-v` — verbose
 - Supports scheduled device reboots and logging to syslog/file with timestamps
 
-### `hmsniff.c` — Packet Sniffer (404 lines)
+### `hmsniff.c` — Packet Sniffer
 
 Captures and displays raw BidCoS packets over the air. Works with HM-CFG-USB, HM-MOD-UART, and HM-LGW-O-TW-W-EU.
 
-### `flash-ota.c` — Over-the-Air Flasher (1342 lines, most complex)
+### `flash-ota.c` — Over-the-Air Flasher (most complex file)
 
 Firmware updater supporting multiple transport types.
 
@@ -211,11 +220,12 @@ Serial protocol driver for CUL-based devices. Supports baud rates: 9600, 19200, 
 
 Packet format macros and AES signing.
 
-- **Packet macros:** `HM_LEN()`, `HM_MSGID()`, `HM_CTL()`, `HM_TYPE()`, `HM_PAYLOAD()`, `HM_SRC()`, `HM_DST()`
+- **Packet offset constants:** `LEN`, `MSGID`, `CTL`, `TYPE`, `PAYLOAD` — used as `buf[LEN]`, `buf[MSGID]`, etc.
+- **Address macros:** `SRC(buf)`, `DST(buf)`, `SET_SRC(buf, src)`, `SET_DST(buf, dst)`, `PAYLOADLEN(buf)`
 - **Device type enum:** `HMCFGUSB`, `CULFW`, `HMUARTLGW`
 - **Functions:** `hm_sign()` — AES challenge-response; `hm_set_debug()` — enable debug hexdumps
 
-### `aes.c / .h` — AES Cryptography (1096 lines)
+### `aes.c / .h` — AES Cryptography
 
 Brad Conte's public domain AES implementation (AES-128, AES-192, AES-256, ECB/CBC modes). Used for device authentication.
 
@@ -243,7 +253,10 @@ This is a C codebase. Follow the existing style:
 - **Braces:** K&R style (opening brace on same line as control statement)
 - **Naming:** `snake_case` for functions and variables, `UPPER_CASE` for macros and constants
 - **Header guards:** `#ifndef FILENAME_H` / `#define FILENAME_H` / `#endif`
+- **Compiler attributes:** use `__attribute__((unused))` on parameters (not `(void)param;`), `__attribute__((fallthrough));` (not `/* fallthrough */`), `__attribute__((const))` on pure functions, `__attribute__((format(printf,...)))` on variadic printf-like functions, `__attribute__((noreturn))` where applicable
+- **`const` qualifiers:** public API functions use `const` on read-only pointer parameters
 - Compiler warnings treated as errors conceptually (`-Wall -Wextra`) — keep builds warning-free
+- Cross-compilation must stay clean: ARM GCC enforces `warn_unused_result` on `write()` etc.
 
 ### Branching Strategy
 
@@ -268,41 +281,22 @@ feat: add support for HM-LGW-O-TW-W-EU network gateway
 
 ## CI/CD Pipeline
 
-### Docker Image Workflow (`.github/workflows/docker-image.yml`)
+All workflows trigger on pushes to `main` and pull requests. Action versions are pinned by SHA and managed by Renovate (`renovate.json5`).
 
-**Triggers:**
-- Push to any branch or tag
-- Monthly scheduled build (14th of month, 00:00 UTC)
+| Workflow | File | Purpose |
+|----------|------|---------|
+| Build | `build.yml` | Compile with gcc + clang, `-Werror` |
+| Cross-compile | `cross-compile.yml` | ARM cross-compilation (armhf, arm64) with `-Werror` |
+| Test | `test.yml` | `make test` — unit tests with gcc + clang |
+| Sanitizers | `sanitizers.yml` | ASan + UBSan via `make test` |
+| Valgrind | `valgrind.yml` | Memcheck on `test_unit` binary |
+| Docker Image | `docker-image.yml` | Multi-arch build (`amd64`, `arm/v7`, `arm64`), push to ghcr.io + DockerHub, Cosign signing. Also runs monthly and on tags. |
+| Release | `release.yml` | Auto-tags patch version on source changes to `main`, builds binary tarballs (amd64, arm64) + .deb, creates GitHub Release. Also triggers Docker Image CI via the tag. |
+| CodeQL | `codeql.yml` | GitHub CodeQL security scanning |
+| Analysis | `analysis.yml` | Static analysis |
+| Deb | `deb.yml` | Debian package build check |
 
-**Permissions:** `contents: read`, `packages: write`, `id-token: write` (for OIDC-based Cosign signing)
-
-**Steps:**
-1. Checkout repository
-2. Login to ghcr.io and Docker Hub
-3. Install Cosign for image signing
-4. Setup QEMU and Docker Buildx
-5. Generate image metadata and tags (targets both ghcr.io and DockerHub)
-6. Build and push Docker image (`linux/amd64`, `linux/arm/v7`, `linux/arm64`) — push only on `main`, tags, and scheduled builds
-7. Sign published images with Cosign using GitHub OIDC tokens
-
-**Action versions (pinned by SHA, managed by Renovate):**
-- `actions/checkout` v6.0.1
-- `docker/login-action` v3.6.0
-- `docker/metadata-action` v5.10.0
-- `docker/setup-qemu-action` v3.7.0
-- `docker/setup-buildx-action` v3.12.0
-- `docker/build-push-action` v6.18.0
-- `sigstore/cosign-installer` v4.0.0
-
-**Image tags generated:**
-- `edge` — latest dev build
-- Branch name, PR number, commit SHA (long format)
-- Semantic version tags on releases (major.minor)
-- Date-based tags on scheduled builds (`YYYY-MM-DD`)
-
-### Renovate (`.github/renovate.json5`)
-
-Automated dependency updates extend from `local>olcond/renovate-config`.
+**Release flow:** push source changes to `main` → `release.yml` auto-creates `v0.103.N` tag → tag triggers `release.yml` build/deb/release jobs + `docker-image.yml` Docker build.
 
 ---
 
@@ -422,10 +416,6 @@ attr hmusb hmId <hmId>
 | `libusb-1.0` | USB device access at runtime |
 | `librt` | POSIX real-time extensions |
 
-### Standard C Libraries Used
-
-`stdio.h`, `stdlib.h`, `string.h`, `stdint.h`, `unistd.h`, `errno.h`, `fcntl.h`, `termios.h`, `sys/socket.h`, `netinet/in.h`, `arpa/inet.h`, `time.h`, `signal.h`, `math.h`
-
 ---
 
 ## File Modification Guidelines for AI Assistants
@@ -435,10 +425,10 @@ attr hmusb hmId <hmId>
 3. **`hmcfgusb.rules`** — udev rules; edit with care as these affect hardware access permissions.
 4. **`Makefile`** — dual-mode (standard + OpenWRT). Changes to compilation flags must not break either mode.
 5. **Header files (`.h`)** — define public APIs between modules. Changing function signatures requires updating all callers.
-6. **`flash-ota.c`** is the most complex file (1342 lines). It handles multiple device types with separate code paths — trace carefully before modifying.
+6. **`flash-ota.c`** is the most complex file (~1350 lines). It handles multiple device types with separate code paths — trace carefully before modifying.
 7. **Protocol correctness is critical** — incorrect packet construction or AES signing changes can silently break device communication or security guarantees.
 8. **Maintain `-Wall -Wextra` cleanliness** — the build flags treat warnings seriously; introduce no new warnings.
-9. **No test suite exists** — validate changes manually with actual hardware or by code review.
+9. **Unit tests exist** — `make test` runs `test_unit` (covers `util.c` and `firmware.c`). CI also runs ASan, UBSan, and Valgrind. Hardware-dependent code paths still require manual validation.
 10. **`debian/` packaging** — the install paths and symlinks in `debian/install` and `debian/hmcfgusb.links` must be updated if new binaries are added.
 11. **`.gitignore`** — already covers `*.o`, `*.d`, compiled binaries, and firmware files (`*.enc`, `*.eq3`). Add new build artifacts here when introducing new targets.
 
