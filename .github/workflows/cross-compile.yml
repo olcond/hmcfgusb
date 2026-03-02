@@ -28,9 +28,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install cross-compiler and dependencies
+      - name: Configure apt sources for cross-architecture
         run: |
           sudo dpkg --add-architecture ${{ matrix.dpkg_arch }}
+          # Ubuntu 24.04 uses DEB822-format sources; restrict default to amd64
+          # and add ports.ubuntu.com for foreign architectures
+          sudo sed -i 's/^Types: deb$/&\nArchitectures: amd64/' /etc/apt/sources.list.d/ubuntu.sources
+          printf '%s\n' \
+            "Types: deb" \
+            "URIs: http://ports.ubuntu.com/ubuntu-ports" \
+            "Suites: noble noble-updates noble-backports noble-security" \
+            "Components: main universe restricted multiverse" \
+            "Architectures: armhf arm64" \
+            "Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg" \
+            | sudo tee /etc/apt/sources.list.d/ports.sources > /dev/null
+
+      - name: Install cross-compiler and dependencies
+        run: |
           sudo apt-get update
           sudo apt-get install -y ${{ matrix.pkg }} libusb-1.0-0-dev:${{ matrix.dpkg_arch }}
 
