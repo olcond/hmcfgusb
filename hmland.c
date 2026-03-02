@@ -99,7 +99,7 @@ static void print_timestamp(FILE *f)
 	tmp = localtime(&tv.tv_sec);
 	memset(ts, 0, sizeof(ts));
 	strftime(ts, sizeof(ts)-1, "%Y-%m-%d %H:%M:%S", tmp);
-	fprintf(f, "%s.%06ld: ", ts, tv.tv_usec);
+	fprintf(f, "%s.%06ld: ", ts, (long)tv.tv_usec);
 }
 
 static void write_log(const char *buf, int len, const char *fmt, ...)
@@ -438,7 +438,7 @@ static int hmlan_parse_one(uint8_t *cmd, int last, void *data)
 			parse_part_in(&inpos, (last-(inpos-cmd)), &outpos, (sizeof(out)-(outpos-out)), 0);
 			parse_part_in(&inpos, (last-(inpos-cmd)), &outpos, (sizeof(out)-(outpos-out)), 0);
 			parse_part_in(&inpos, (last-(inpos-cmd)), &outpos, (sizeof(out)-(outpos-out)), FLAG_LENGTH_BYTE);
-			// Fallthrough to default expected, no break here
+			/* fallthrough */
 		default:
 			parse_part_in(&inpos, (last-(inpos-cmd)), &outpos, (sizeof(out)-(outpos-out)), FLAG_IGNORE_COMMAS);
 			break;
@@ -517,6 +517,8 @@ static int comm(int fd_in, int fd_out, int master_socket, int flags)
 	struct hmcfgusb_dev *dev;
 	uint8_t out[HMCFGUSB_FRAME_SIZE];
 	int quit = 0;
+
+	(void)flags;
 
 	hmcfgusb_set_debug(debug);
 
@@ -633,6 +635,8 @@ static int comm(int fd_in, int fd_out, int master_socket, int flags)
 
 void sigterm_handler(int sig)
 {
+	(void)sig;
+
 	if (unlink(PID_FILE) == -1)
 		perror("Can't remove PID file");
 
