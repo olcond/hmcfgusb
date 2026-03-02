@@ -629,7 +629,7 @@ __attribute__((noreturn)) void sigterm_handler(int __attribute__((unused)) sig)
 {
 	if (unlink(PID_FILE) == -1) {
 		static const char msg[] = "Can't remove PID file\n";
-		write(STDERR_FILENO, msg, sizeof(msg) - 1);
+		(void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
 	}
 
 	_exit(EXIT_SUCCESS);
