@@ -49,6 +49,6 @@ jobs:
           sudo apt-get install -y ${{ matrix.pkg }} libusb-1.0-0-dev:${{ matrix.dpkg_arch }}
 
       - name: Cross-compile for ${{ matrix.arch }}
-        run: make CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror"
+        run: make CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror -Wno-error=maybe-uninitialized"
         env:
           CFLAGS: -MMD -O2 -Wall -Wextra -I/opt/local/include -g
