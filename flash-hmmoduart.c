@@ -46,6 +46,8 @@ static int parse_hmuartlgw(enum hmuartlgw_dst dst, uint8_t *buf, int buf_len, vo
 {
 	struct recv_data *rdata = data;
 
+	(void)dst;
+
 	if (buf_len != 2)
 		return 1;
 

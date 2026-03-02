@@ -138,7 +138,7 @@ static void dissect_hm(uint8_t *buf, int len)
 	strftime(ts, sizeof(ts)-1, "%Y-%m-%d %H:%M:%S", tmp);
 
 	if (verbose) {
-		printf("%s.%06ld: ", ts, tv.tv_usec);
+		printf("%s.%06ld: ", ts, (long)tv.tv_usec);
 
 		for (i = 0; i < len; i++) {
 			printf("%02X", buf[i]);
@@ -173,7 +173,7 @@ static void dissect_hm(uint8_t *buf, int len)
 			printf("                         LL NR FL CM sender recvr  payload\n");
 
 		printf("%s.%03ld: %02X %02X %02X %02X %02X%02X%02X %02X%02X%02X ",
-				ts, tv.tv_usec/1000,
+				ts, (long)(tv.tv_usec/1000),
 				buf[0], buf[1], buf[2], buf[3],
 				buf[4], buf[5], buf[6],
 				buf[7], buf[8], buf[9]);
@@ -226,6 +226,8 @@ static int parse_hmcfgusb(uint8_t *buf, int buf_len, void *data)
 
 static int parse_hmuartlgw(enum hmuartlgw_dst dst, uint8_t *buf, int buf_len, void *data)
 {
+	(void)data;
+
 	if (dst == HMUARTLGW_OS) {
 		if ((buf[0] != HMUARTLGW_OS_ACK) ||
 		    (buf[1] != 0x01)) {
