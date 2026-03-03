@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.c'
+      - '*.h'
+      - 'Makefile'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '*.c'
+      - '*.h'
+      - 'Makefile'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        cc: [gcc, clang]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0-dev ${{ matrix.cc }}
+
+      - name: Build with ${{ matrix.cc }}
+        run: make CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror"
+        env:
+          CFLAGS: -MMD -O2 -Wall -Wextra -I/opt/local/include -g

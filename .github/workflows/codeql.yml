@@ -1,0 +1,49 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.c'
+      - '*.h'
+      - 'Makefile'
+      - '.github/workflows/codeql.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '*.c'
+      - '*.h'
+      - 'Makefile'
+      - '.github/workflows/codeql.yml'
+  schedule:
+    - cron: '0 3 * * 0'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@45580472a5bb82c4681c4ac726cfdb60060c2ee1 # v3.32.4
+        with:
+          languages: c-cpp
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0-dev
+
+      - name: Build
+        run: make CC=gcc
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@45580472a5bb82c4681c4ac726cfdb60060c2ee1 # v3.32.4

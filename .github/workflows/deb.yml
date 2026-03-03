@@ -1,0 +1,44 @@
+name: Debian Package
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.c'
+      - '*.h'
+      - 'Makefile'
+      - 'debian/**'
+      - '.github/workflows/deb.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '*.c'
+      - '*.h'
+      - 'Makefile'
+      - 'debian/**'
+      - '.github/workflows/deb.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y devscripts debhelper libusb-1.0-0-dev
+
+      - name: Build Debian package
+        run: dpkg-buildpackage -us -uc -b
+
+      - name: Upload .deb artifact
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: debian-package
+          path: ../*.deb

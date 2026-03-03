@@ -1,0 +1,43 @@
+name: Static Analysis
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.c'
+      - '*.h'
+      - 'Makefile'
+      - '.github/workflows/analysis.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '*.c'
+      - '*.h'
+      - 'Makefile'
+      - '.github/workflows/analysis.yml'
+
+jobs:
+  cppcheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=warning,performance,portability \
+            --suppress=missingIncludeSystem \
+            --error-exitcode=1 \
+            --inline-suppr \
+            -I /usr/include \
+            -I /usr/include/libusb-1.0 \
+            --std=c11 \
+            $(find . -maxdepth 1 -name '*.c' ! -name 'aes.c')
