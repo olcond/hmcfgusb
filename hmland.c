@@ -291,7 +291,7 @@ static int hmlan_format_out(uint8_t *buf, int buf_len, void *data)
 				}
 
 				if (verbose && new_reboot_seconds && (reboot_seconds != new_reboot_seconds))
-					printf("Rebooting in %u seconds due to old firmware (0.%d)\n",
+					printf("Rebooting in %d seconds due to old firmware (0.%d)\n",
 						new_reboot_seconds, version);
 
 				reboot_seconds = new_reboot_seconds;
@@ -554,7 +554,7 @@ static int comm(int fd_in, int fd_out, int master_socket, int __attribute__((unu
 	}
 
 	if (verbose && reboot_seconds)
-		printf("Rebooting in %u seconds\n", reboot_seconds);
+		printf("Rebooting in %d seconds\n", reboot_seconds);
 
 
 	if (!hmcfgusb_add_pfd(dev, fd_in, POLLIN)) {
@@ -670,7 +670,7 @@ static int socket_server(char *iface, int port, int flags)
 
 					fclose(pidfile);
 
-					fprintf(stderr, "Already running with PID %u according to " PID_FILE "!\n", old_pid);
+					fprintf(stderr, "Already running with PID %d according to " PID_FILE "!\n", (int)old_pid);
 					exit(EXIT_FAILURE);
 				}
 				perror("Can't create PID file " PID_FILE);
@@ -695,11 +695,11 @@ static int socket_server(char *iface, int port, int flags)
 		pid = fork();
 		if (pid > 0) {
 			if (pidfile) {
-				fprintf(pidfile, "%u\n", pid);
+				fprintf(pidfile, "%d\n", (int)pid);
 				fclose(pidfile);
 			}
 
-			printf("Daemon with PID %u started!\n", pid);
+			printf("Daemon with PID %d started!\n", (int)pid);
 			exit(EXIT_SUCCESS);
 		} else if (pid < 0) {
 			perror("fork");
@@ -817,7 +817,7 @@ void hmlan_syntax(char *prog)
 	fprintf(stderr, "\t-L logfile\tlog network-communication to logfile\n");
 	fprintf(stderr, "\t-P\t\tcreate PID file " PID_FILE " in daemon mode\n");
 	fprintf(stderr, "\t-p n\t\tlisten on port n (default: 1000)\n");
-	fprintf(stderr, "\t-r n\t\treboot HM-CFG-USB after n seconds (0: no reboot, default: %u if FW < 0.967, 0 otherwise)\n", DEFAULT_REBOOT_SECONDS);
+	fprintf(stderr, "\t-r n\t\treboot HM-CFG-USB after n seconds (0: no reboot, default: %d if FW < 0.967, 0 otherwise)\n", DEFAULT_REBOOT_SECONDS);
 	fprintf(stderr, "\t   hh:mm\treboot HM-CFG-USB daily at hh:mm\n");
 	fprintf(stderr, "\t-S serial\tuse HM-CFG-USB with given serial (for multiple hmland instances)\n");
 	fprintf(stderr, "\t-v\t\tverbose mode\n");

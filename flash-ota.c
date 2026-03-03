@@ -571,7 +571,7 @@ static int switch_speed(struct hm_dev *dev, struct recv_data *rdata, uint8_t spe
 	uint8_t out[0x40];
 	int pfd;
 
-	printf("Entering %uk-mode\n", speed);
+	printf("Entering %uk-mode\n", (unsigned int)speed);
 
 	switch(dev->type) {
 		case DEVICE_TYPE_HMCFGUSB:
@@ -626,7 +626,7 @@ void flash_ota_syntax(char *prog)
 	fprintf(stderr, "\t-s SERIAL\tserial of device to flash (optional when using -D)\n");
 	fprintf(stderr, "\nOptional parameters:\n");
 	fprintf(stderr, "\t-c device\tenable CUL-mode with CUL at path \"device\"\n");
-	fprintf(stderr, "\t-b bps\t\tuse CUL with speed \"bps\" (default: %u)\n", DEFAULT_CUL_BPS);
+	fprintf(stderr, "\t-b bps\t\tuse CUL with speed \"bps\" (default: %u)\n", (unsigned int)DEFAULT_CUL_BPS);
 	fprintf(stderr, "\t-l\t\tlower payloadlen (required for devices with little RAM, e.g. CUL v2 and CUL v4)\n");
 	fprintf(stderr, "\t-S serial\tuse HM-CFG-USB with given serial\n");
 	fprintf(stderr, "\t-U device\tuse HM-MOD-UART on given device\n");
@@ -681,7 +681,7 @@ int main(int argc, char **argv)
 				fw_file = optarg;
 				break;
 			case 'l':
-				printf("Reducing payload-len from %d to %d\n", max_payloadlen, LOWER_MAX_PAYLOAD);
+				printf("Reducing payload-len from %u to %u\n", (unsigned int)max_payloadlen, (unsigned int)LOWER_MAX_PAYLOAD);
 				max_payloadlen = LOWER_MAX_PAYLOAD;
 				break;
 			case 's':
@@ -761,10 +761,10 @@ int main(int argc, char **argv)
 	hm_set_debug(debug);
 
 	if (culfw_dev) {
-		printf("Opening culfw-device at path %s with speed %u\n", culfw_dev, bps);
+		printf("Opening culfw-device at path %s with speed %u\n", culfw_dev, (unsigned int)bps);
 		dev.culfw = culfw_init(culfw_dev, bps, parse_culfw, &rdata);
 		if (!dev.culfw) {
-			fprintf(stderr, "Can't initialize CUL at %s with rate %u\n", culfw_dev, bps);
+			fprintf(stderr, "Can't initialize CUL at %s with rate %u\n", culfw_dev, (unsigned int)bps);
 			exit(EXIT_FAILURE);
 		}
 		dev.type = DEVICE_TYPE_CULFW;
@@ -791,8 +791,8 @@ int main(int argc, char **argv)
 		printf("culfw-device firmware version: ");
 		if (rdata.version != 0xffff) {
 			printf("%u.%02u\n",
-				(rdata.version >> 8) & 0xff,
-				rdata.version & 0xff);
+				(unsigned int)((rdata.version >> 8) & 0xff),
+				(unsigned int)(rdata.version & 0xff));
 		} else {
 			if (rdata.is_TSCUL) {
 				culfw_send(dev.culfw, "At1\r\n", 5); // tsculfw: try switch on timestamp protocol
@@ -1214,7 +1214,7 @@ int main(int argc, char **argv)
 	if (debug) {
 		printf("\n");
 	} else {
-		printf(": %04u/%04u %c", 0, fw->fw_blocks, twiddlie[0]);
+		printf(": %04u/%04u %c", 0u, (unsigned int)fw->fw_blocks, twiddlie[0]);
 		fflush(stdout);
 	}
 
@@ -1272,7 +1272,7 @@ int main(int argc, char **argv)
 					fprintf(stderr, "\nToo many errors, giving up!\n");
 					exit(EXIT_FAILURE);
 				} else {
-					printf("Flashing %d blocks: %04u/%04u %c", fw->fw_blocks, block + 1, fw->fw_blocks, twiddlie[msgnum % sizeof(twiddlie)]);
+					printf("Flashing %d blocks: %04u/%04u %c", fw->fw_blocks, (unsigned int)(block + 1), (unsigned int)fw->fw_blocks, twiddlie[msgnum % sizeof(twiddlie)]);
 				}
 			}
 
@@ -1280,7 +1280,7 @@ int main(int argc, char **argv)
 
 			if (!debug) {
 				printf("\b\b\b\b\b\b\b\b\b\b\b%04u/%04u %c",
-					block + 1, fw->fw_blocks, twiddlie[msgnum % sizeof(twiddlie)]);
+					(unsigned int)(block + 1), (unsigned int)fw->fw_blocks, twiddlie[msgnum % sizeof(twiddlie)]);
 				fflush(stdout);
 			}
 		} while((pos - &(fw->fw[block][2])) < len);

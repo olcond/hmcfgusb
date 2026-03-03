@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 		}
 
 		if (rdata.ack != 1) {
-			fprintf(stderr, "\n\nError flashing block %d, status: %u\n", block, rdata.ack);
+			fprintf(stderr, "\n\nError flashing block %d, status: %u\n", block, (unsigned int)rdata.ack);
 			exit(EXIT_FAILURE);
 		}
 

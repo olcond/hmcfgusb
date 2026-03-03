@@ -140,7 +140,7 @@ static struct firmware* firmware_read_ihex(int fd, struct firmware *fw, int atme
 			printf("Length: %d, Address: 0x%04x, Type: 0x%02x\n", len, addr, type);
 
 		if (len > MAX_BLOCK_LENGTH) {
-			fprintf(stderr, "Invalid block-length %u > %u for block %d!\n", len, MAX_BLOCK_LENGTH, fw->fw_blocks+1);
+			fprintf(stderr, "Invalid block-length %u > %u for block %d!\n", (unsigned int)len, (unsigned int)MAX_BLOCK_LENGTH, fw->fw_blocks+1);
 			exit(EXIT_FAILURE);
 		}
 
@@ -330,7 +330,7 @@ struct firmware* firmware_read_firmware(const char *filename, int atmega, int de
 		len |= ascii_to_nibble(buf[3]) & 0xf;
 
 		if (len > MAX_BLOCK_LENGTH) {
-			fprintf(stderr, "Invalid block-length %u > %u for block %d!\n", len, MAX_BLOCK_LENGTH, fw->fw_blocks+1);
+			fprintf(stderr, "Invalid block-length %u > %u for block %d!\n", (unsigned int)len, (unsigned int)MAX_BLOCK_LENGTH, fw->fw_blocks+1);
 			exit(EXIT_FAILURE);
 		}
 
