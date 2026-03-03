@@ -37,7 +37,5 @@ jobs:
             --suppress=missingIncludeSystem \
             --error-exitcode=1 \
             --inline-suppr \
-            -I /usr/include \
-            -I /usr/include/libusb-1.0 \
             --std=c11 \
             $(find . -maxdepth 1 -name '*.c' ! -name 'aes.c')
