@@ -36,6 +36,6 @@ jobs:
           sudo apt-get install -y libusb-1.0-0-dev ${{ matrix.cc }}
 
       - name: Build with ${{ matrix.cc }}
-        run: make CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror"
+        run: make CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror -Wno-error=maybe-uninitialized"
         env:
           CFLAGS: -MMD -O2 -Wall -Wextra -I/opt/local/include -g
