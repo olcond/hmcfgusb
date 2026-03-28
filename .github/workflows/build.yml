@@ -24,7 +24,11 @@ jobs:
 
     strategy:
       matrix:
-        cc: [gcc, clang]
+        include:
+          - cc: gcc
+            extra_cflags: -Wno-error=maybe-uninitialized
+          - cc: clang
+            extra_cflags: ''
 
     steps:
       - name: Checkout repository
@@ -36,6 +40,6 @@ jobs:
           sudo apt-get install -y libusb-1.0-0-dev ${{ matrix.cc }}
 
       - name: Build with ${{ matrix.cc }}
-        run: make CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror -Wno-error=maybe-uninitialized"
+        run: make CC=${{ matrix.cc }} CFLAGS="${CFLAGS} -Werror ${{ matrix.extra_cflags }}"
         env:
           CFLAGS: -MMD -O2 -Wall -Wextra -I/opt/local/include -g
