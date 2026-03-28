@@ -62,7 +62,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}
-            ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+            ${{ secrets.DOCKER_USERNAME != '' && format('{0}/{1}', secrets.DOCKER_USERNAME, github.event.repository.name) || '' }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -103,6 +103,14 @@ jobs:
         run: |
           images=""
           for tag in ${TAGS}; do
-            images+="${tag}@${DIGEST} "
+            # Only sign tags for registries that were actually pushed to
+            case "${tag}" in
+              ghcr.io/*) images+="${tag}@${DIGEST} " ;;
+              */*)
+                if [ -n "${{ secrets.DOCKER_USERNAME }}" ]; then
+                  images+="${tag}@${DIGEST} "
+                fi
+                ;;
+            esac
           done
           cosign sign --yes ${images}
