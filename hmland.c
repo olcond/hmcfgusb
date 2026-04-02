@@ -638,7 +638,7 @@ __attribute__((noreturn)) void sigterm_handler(int __attribute__((unused)) sig)
 #define FLAG_DAEMON	(1 << 0)
 #define FLAG_PID_FILE	(1 << 1)
 
-static int socket_server(char *iface, int port, int flags)
+static int socket_server(const char *iface, int port, int flags)
 {
 	struct sigaction sact;
 	struct sockaddr_in sin;
@@ -804,7 +804,7 @@ static int interactive_server(int flags)
 	return EXIT_SUCCESS;
 }
 
-void hmlan_syntax(char *prog)
+void hmlan_syntax(const char *prog)
 {
 	fprintf(stderr, "Syntax: %s options\n\n", prog);
 	fprintf(stderr, "Possible options:\n");

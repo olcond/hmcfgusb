@@ -56,7 +56,7 @@ static int parse_hmcfgusb(uint8_t *buf, int buf_len, void *data)
 	return 1;
 }
 
-void flash_hmcfgusb_syntax(char *prog)
+void flash_hmcfgusb_syntax(const char *prog)
 {
 	fprintf(stderr, "Syntax: %s [options] filename.enc\n\n", prog);
 	fprintf(stderr, "Possible options:\n");
