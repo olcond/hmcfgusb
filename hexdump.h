@@ -1,3 +1,6 @@
+#ifndef HEXDUMP_H
+#define HEXDUMP_H
+
 /* simple hexdumper
  *
  * Copyright (c) 2004-2016 Michael Gernoth <michael@gernoth.net>
@@ -56,3 +59,5 @@ static void hexdump(const unsigned char *buf, int len, const char *prefix)
 	asciishow(buf+i-(i%16), (i%16));
 	fprintf(stderr, "\n");
 }
+
+#endif /* HEXDUMP_H */

@@ -256,7 +256,7 @@ static int parse_hmuartlgw(enum hmuartlgw_dst dst, uint8_t *buf, int buf_len, vo
 	return 1;
 }
 
-void hmsniff_syntax(char *prog)
+void hmsniff_syntax(const char *prog)
 {
 	fprintf(stderr, "Syntax: %s options\n\n", prog);
 	fprintf(stderr, "Possible options:\n");

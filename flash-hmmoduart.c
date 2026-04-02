@@ -54,7 +54,7 @@ static int parse_hmuartlgw(enum hmuartlgw_dst __attribute__((unused)) dst, uint8
 	return 1;
 }
 
-void flash_hmmoduart_syntax(char *prog)
+void flash_hmmoduart_syntax(const char *prog)
 {
 	fprintf(stderr, "Syntax: %s [options] -U /dev/ttyAMA0 filename.eq3\n\n", prog);
 	fprintf(stderr, "Mandatory parameter:\n");

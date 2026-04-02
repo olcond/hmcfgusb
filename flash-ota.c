@@ -617,7 +617,7 @@ static int switch_speed(struct hm_dev *dev, struct recv_data *rdata, uint8_t spe
 	return 1;
 }
 
-void flash_ota_syntax(char *prog)
+void flash_ota_syntax(const char *prog)
 {
 	fprintf(stderr, "Syntax: %s parameters options\n\n", prog);
 	fprintf(stderr, "Mandatory parameters:\n");
@@ -1214,7 +1214,7 @@ int main(int argc, char **argv)
 	if (debug) {
 		printf("\n");
 	} else {
-		printf(": %04u/%04u %c", 0u, (unsigned int)fw->fw_blocks, twiddlie[0]);
+		printf(": %04d/%04d %c", 0, fw->fw_blocks, twiddlie[0]);
 		fflush(stdout);
 	}
 
@@ -1272,15 +1272,15 @@ int main(int argc, char **argv)
 					fprintf(stderr, "\nToo many errors, giving up!\n");
 					exit(EXIT_FAILURE);
 				} else {
-					printf("Flashing %d blocks: %04u/%04u %c", fw->fw_blocks, (unsigned int)(block + 1), (unsigned int)fw->fw_blocks, twiddlie[msgnum % sizeof(twiddlie)]);
+					printf("Flashing %d blocks: %04d/%04d %c", fw->fw_blocks, block + 1, fw->fw_blocks, twiddlie[msgnum % sizeof(twiddlie)]);
 				}
 			}
 
 			msgnum++;
 
 			if (!debug) {
-				printf("\b\b\b\b\b\b\b\b\b\b\b%04u/%04u %c",
-					(unsigned int)(block + 1), (unsigned int)fw->fw_blocks, twiddlie[msgnum % sizeof(twiddlie)]);
+				printf("\b\b\b\b\b\b\b\b\b\b\b%04d/%04d %c",
+					block + 1, fw->fw_blocks, twiddlie[msgnum % sizeof(twiddlie)]);
 				fflush(stdout);
 			}
 		} while((pos - &(fw->fw[block][2])) < len);
